@@ -4,35 +4,116 @@
   <meta charset="UTF-8">
   <title>Multiplayer Bingo</title>
   <style>
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(to right, #8EC5FC, #E0C3FC);
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    color: #222;
+  }
+
+  h1 {
+    margin-top: 30px;
+    font-size: 2.5em;
+    color: #333;
+    text-shadow: 1px 1px 0px white;
+  }
+
+  #message {
+    margin: 10px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 10px 20px;
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(5, 70px);
+    grid-gap: 10px;
+    margin: 30px auto 10px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 15px;
+    box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.2);
+    user-select: none;
+  }
+
+  .cell {
+    width: 70px;
+    height: 70px;
+    background-color: #fff;
+    border: 2px solid #ccc;
+    border-radius: 10px;
+    font-size: 1.2em;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cell:hover {
+    background-color: #e0eaff;
+    transform: scale(1.05);
+  }
+
+  .marked {
+    background-color: #4CAF50;
+    color: white;
+    border-color: #388E3C;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.3);
+  }
+
+  .disabled .cell {
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  #playAgain {
+    margin-top: 15px;
+    padding: 10px 20px;
+    font-size: 1rem;
+    background-color: #673AB7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    display: none;
+  }
+
+  #playAgain:hover {
+    background-color: #5E35B1;
+  }
+
+  @media (max-width: 500px) {
     #board {
-      display: grid;
-      grid-template-columns: repeat(5, 60px);
-      gap: 5px;
-      justify-content: center;
+      grid-template-columns: repeat(5, 48px);
     }
+
     .cell {
-      width: 60px;
-      height: 60px;
-      line-height: 60px;
-      background-color: #f0f0f0;
-      border: 1px solid #888;
-      font-weight: bold;
-      cursor: pointer;
+      width: 48px;
+      height: 48px;
+      font-size: 1em;
     }
-    .marked {
-      background-color: limegreen;
-      color: white;
-    }
-    #message {
-      font-size: 1.2em;
-      margin-top: 10px;
-    }
+
     #playAgain {
-      margin-top: 15px;
-      display: none;
-      padding: 10px 20px;
+      padding: 8px 16px;
     }
-  </style>
+  }
+</style>
 </head>
 <body>
   <h1>Multiplayer Bingo</h1>
