@@ -1,103 +1,104 @@
-// ✅ Replace this with your exact Render backend URL!
 const socket = io('https://bingo-backend-1-4ajn.onrender.com');
 
-let board = document.getElementById('board');
+const board = document.getElementById("board");
 let numbers = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
 let marked = Array(25).fill(false);
 let gameOver = false;
-let playerName = prompt("Enter your name") || "Player";
+let playersReady = false;
 
-// Emit player name to server
-socket.emit('playerName', playerName);
+const playerName = prompt("Enter your name") || "Player";
+socket.emit("playerName", playerName);
+showMessage("Connecting...");
 
-// Show messages
-function showMessage(msg) {
-  const msgBox = document.getElementById("message");
-  msgBox.innerText = msg;
-}
-
-// Create grid
+// Create 5x5 grid
 numbers.forEach((num, idx) => {
-  const cell = document.createElement('div');
-  cell.classList.add('cell');
+  const cell = document.createElement("div");
+  cell.className = "cell";
   cell.innerText = num;
   cell.dataset.index = idx;
 
-  cell.addEventListener('click', () => {
-    if (marked[idx] || gameOver) return;
+  cell.addEventListener("click", () => {
+    if (marked[idx] || gameOver || !playersReady) return;
     marked[idx] = true;
-    socket.emit('markNumber', num);
+    socket.emit("markNumber", num);
   });
 
   board.appendChild(cell);
 });
 
+function showMessage(msg) {
+  document.getElementById("message").innerText = msg;
+}
+
 function disableBoard() {
-  document.querySelectorAll('.cell').forEach(cell => {
-    cell.classList.add('disabled');
+  document.querySelectorAll(".cell").forEach(cell => {
+    cell.style.pointerEvents = "none";
+    cell.style.opacity = "0.6";
   });
 }
 
 function enableBoard() {
-  document.querySelectorAll('.cell').forEach(cell => {
-    cell.classList.remove('disabled');
+  document.querySelectorAll(".cell").forEach(cell => {
+    cell.style.pointerEvents = "auto";
+    cell.style.opacity = "1";
   });
 }
 
-// Receive events
-socket.on('userJoined', (playerCount) => {
-  if (playerCount < 2) {
-    showMessage("🕹 Waiting for another player...");
-    disableBoard();
-  } else {
-    showMessage("🎮 Game ready! Start marking!");
+// Incoming events
+socket.on("userJoined", (count) => {
+  if (count >= 2) {
+    showMessage("🎮 Both players ready! You can start!");
+    playersReady = true;
     enableBoard();
+  } else {
+    showMessage("🕹 Waiting for another player...");
+    playersReady = false;
+    disableBoard();
   }
 });
 
-socket.on('playerJoined', (name) => {
-  showMessage(`${name} joined the game!`);
+socket.on("playerJoined", (name) => {
+  showMessage(`📢 ${name} just joined`);
 });
 
-socket.on('markNumber', (num) => {
+socket.on("markNumber", (num) => {
   const idx = numbers.indexOf(num);
   if (idx > -1 && !marked[idx]) {
     marked[idx] = true;
-    document.querySelectorAll('.cell')[idx].classList.add('marked');
+    document.querySelectorAll(".cell")[idx].classList.add("marked");
   }
+
   if (checkBingo()) {
-    socket.emit('declareWin');
+    socket.emit("declareWin");
   }
 });
 
-socket.on('gameOver', () => {
-  showMessage("🎉 Bingo! You Win!");
+socket.on("gameOver", () => {
+  showMessage("🎉 BINGO! You win!");
   disableBoard();
   gameOver = true;
-  document.getElementById('playAgain').style.display = 'inline';
+  document.getElementById("playAgain").style.display = "inline";
 });
 
-// Reset
-document.getElementById('playAgain').addEventListener('click', () => {
+document.getElementById("playAgain").addEventListener("click", () => {
   location.reload();
 });
 
-// Bingo validation
 function checkBingo() {
-  const isMarked = idx => marked[idx];
-  let count = 0;
+  const isMarked = (i) => marked[i];
+  let lines = 0;
 
-  // rows
+  // Rows
   for (let i = 0; i < 25; i += 5)
-    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j))) count++;
+    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j))) lines++;
 
-  // columns
+  // Columns
   for (let i = 0; i < 5; i++)
-    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j * 5))) count++;
+    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j * 5))) lines++;
 
-  // diagonals
-  if ([0, 6, 12, 18, 24].every(isMarked)) count++;
-  if ([4, 8, 12, 16, 20].every(isMarked)) count++;
+  // Diagonals
+  if ([0, 6, 12, 18, 24].every(i => isMarked(i))) lines++;
+  if ([4, 8, 12, 16, 20].every(i => isMarked(i))) lines++;
 
-  return count >= 1;
+  return lines >= 1;
 }
