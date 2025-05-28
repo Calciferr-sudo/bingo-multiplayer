@@ -32,6 +32,17 @@ socket.on('markNumber', (num) => {
     socket.emit('declareWin');
   }
 });
+
+// Game over signal
+socket.on('gameOver', () => {
+                   // 🔊 confirm you already declared winSound
+  showMessage("🎉 BINGO! YOU WIN!");
+  disableBoard();
+  launchConfetti();                    // 🎆 Confetti calls
+  gameOver = true;
+  document.getElementById("playAgain").style.display = "inline";
+});
+
 function launchConfetti() {
   const end = Date.now() + 1000;
   const colors = ['#bb0000', '#ffffff'];
@@ -57,15 +68,6 @@ function launchConfetti() {
     }
   })();
 }
-// Game over signal
-socket.on('gameOver', () => {
-                   // 🔊 confirm you already declared winSound
-  showMessage("🎉 BINGO! YOU WIN!");
-  disableBoard();
-  launchConfetti();                    // 🎆 Confetti calls
-  gameOver = true;
-  document.getElementById("playAgain").style.display = "inline";
-});
 // Bingo Check
 function checkBingo() {
   const isMarked = (i) => marked[i];
