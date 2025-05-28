@@ -4,57 +4,41 @@
   <meta charset="UTF-8">
   <title>Multiplayer Bingo</title>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-    }
-
     #board {
       display: grid;
       grid-template-columns: repeat(5, 60px);
-      grid-gap: 5px;
+      gap: 5px;
       justify-content: center;
-      margin: 20px;
     }
-
     .cell {
       width: 60px;
       height: 60px;
       line-height: 60px;
-      background: #f0f0f0;
-      border: 1px solid #aaa;
-      cursor: pointer;
+      background-color: #f0f0f0;
+      border: 1px solid #888;
       font-weight: bold;
+      cursor: pointer;
     }
-
     .marked {
       background-color: limegreen;
       color: white;
     }
-
-    .disabled {
-      pointer-events: none;
-      opacity: 0.5;
-    }
-
     #message {
-      margin: 10px;
-      font-size: 1.2rem;
-      color: navy;
+      font-size: 1.2em;
+      margin-top: 10px;
     }
-
     #playAgain {
+      margin-top: 15px;
       display: none;
       padding: 10px 20px;
     }
   </style>
 </head>
 <body>
-
   <h1>Multiplayer Bingo</h1>
   <div id="message">Connecting...</div>
-  <button id="playAgain">Play Again</button>
   <div id="board"></div>
+  <button id="playAgain">Play Again</button>
 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="script.js"></script>
