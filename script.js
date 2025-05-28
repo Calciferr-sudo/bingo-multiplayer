@@ -32,7 +32,31 @@ socket.on('markNumber', (num) => {
     socket.emit('declareWin');
   }
 });
+function launchConfetti() {
+  const end = Date.now() + 1000;
+  const colors = ['#bb0000', '#ffffff'];
 
+  (function frame() {
+    confetti({
+      particleCount: 3,
+      angle: 60,
+      spread: 55,
+      origin: { x: 0 },
+      colors: colors,
+    });
+    confetti({
+      particleCount: 3,
+      angle: 120,
+      spread: 55,
+      origin: { x: 1 },
+      colors: colors,
+    });
+
+    if (Date.now() < end) {
+      requestAnimationFrame(frame);
+    }
+  })();
+}
 // Game over signal
 socket.on('gameOver', () => {
                    // 🔊 confirm you already declared winSound
