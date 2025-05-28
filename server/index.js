@@ -8,7 +8,14 @@ const server = http.createServer(app);
 const io = socketIO(server, {
   cors: {
     origin: "*",
+    methods: ['GET', 'POST']
   }
+});
+
+const PORT = process.env.PORT || 3000;  // ✅ Important!
+
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
 
 let players = [];
