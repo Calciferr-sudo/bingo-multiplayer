@@ -74,9 +74,3 @@ chatInput.addEventListener("keydown", function (e) {
   }
 });
 
-socket.on("chatMessage", (msg) => {
-  const line = document.createElement("div");
-  line.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
-  chatBox.append(line);
-  chatBox.scrollTop = chatBox.scrollHeight;
-});
