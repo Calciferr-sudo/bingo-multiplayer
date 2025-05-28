@@ -1,32 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Bingo Multiplayer</title>
   <style>
-    /* Add basic grid CSS */
+    /* Google Fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to right, #f8f9fa, #e0eafc);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #333;
+      font-size: 2.5rem;
+      margin-bottom: 30px;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+    }
+
     #board {
       display: grid;
-      grid-template-columns: repeat(5, 60px);
-      grid-template-rows: repeat(5, 60px);
-      gap: 5px;
+      grid-template-columns: repeat(5, 70px);
+      grid-template-rows: repeat(5, 70px);
+      gap: 10px;
+      padding: 20px;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
+
     .cell {
-      background-color: #f0f0f0;
+      background-color: #f8f9fa;
+      border: 2px solid #ccc;
+      border-radius: 8px;
       text-align: center;
-      line-height: 60px;
-      border: 1px solid #999;
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: #555;
+      line-height: 70px;
       cursor: pointer;
+      transition: all 0.2s ease-in-out;
+      user-select: none;
     }
+
+    .cell:hover {
+      background-color: #dfe9f3;
+      transform: scale(1.05);
+    }
+
     .marked {
-      background-color: lightgreen;
+      background-color: #48c78e;
+      color: white;
+      border-color: #3da278;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
-  <h1>Bingo Game</h1>
+  <h1>🎉 Bingo Multiplayer 🎉</h1>
   <div id="board"></div>
-  
+
   <!-- Socket.IO -->
   <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
   <script src="script.js"></script>
