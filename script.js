@@ -59,12 +59,13 @@ socket.on('markNumber', (num) => {
 });
 
 // Listen for gameOver event
-socket.on('gameOver', (winnerName) => {
+socket.on('gameOver', (data) => {
   gameOver = true;
-  showMessage(`🎉 ${winnerName} WON!`);
+  showMessage(data.message);
+  playAgainBtn.style.display = data.winner ? "inline-block" : "none";
   disableBoard();
-  playAgainBtn.style.display = "inline-block";
 });
+
 
 // Listen for resetGame event (play again)
 socket.on('resetGame', () => {
