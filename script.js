@@ -35,10 +35,13 @@ socket.on('markNumber', (num) => {
 
 // Game over signal
 socket.on('gameOver', () => {
-  alert("Bingo! You Win!");
-  socket.disconnect(); // Stop game
+                   // 🔊 confirm you already declared winSound
+  showMessage("🎉 BINGO! YOU WIN!");
+  disableBoard();
+  launchConfetti();                    // 🎆 Confetti calls
+  gameOver = true;
+  document.getElementById("playAgain").style.display = "inline";
 });
-
 // Bingo Check
 function checkBingo() {
   const isMarked = (i) => marked[i];
