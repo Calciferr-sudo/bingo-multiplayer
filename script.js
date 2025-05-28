@@ -35,39 +35,12 @@ socket.on('markNumber', (num) => {
 
 // Game over signal
 socket.on('gameOver', () => {
-                   // 🔊 confirm you already declared winSound
   showMessage("🎉 BINGO! YOU WIN!");
   disableBoard();
-  launchConfetti();                    // 🎆 Confetti calls
   gameOver = true;
   document.getElementById("playAgain").style.display = "inline";
 });
 
-function launchConfetti() {
-  const end = Date.now() + 1000;
-  const colors = ['#bb0000', '#ffffff'];
-
-  (function frame() {
-    confetti({
-      particleCount: 3,
-      angle: 60,
-      spread: 55,
-      origin: { x: 0 },
-      colors: colors,
-    });
-    confetti({
-      particleCount: 3,
-      angle: 120,
-      spread: 55,
-      origin: { x: 1 },
-      colors: colors,
-    });
-
-    if (Date.now() < end) {
-      requestAnimationFrame(frame);
-    }
-  })();
-}
 // Bingo Check
 function checkBingo() {
   const isMarked = (i) => marked[i];
