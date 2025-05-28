@@ -62,8 +62,12 @@ socket.on('markNumber', (num) => {
 socket.on('gameOver', (data) => {
   gameOver = true;
   showMessage(data.message);
-  playAgainBtn.style.display = data.winner ? "inline-block" : "none";
   disableBoard();
+  if (data.winner) {
+    playAgainBtn.style.display = "inline-block";
+  } else {
+    playAgainBtn.style.display = "none";
+  }
 });
 
 
