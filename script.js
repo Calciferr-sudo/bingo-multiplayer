@@ -1,4 +1,4 @@
-const socket = io();
+const socket = io(https://bingo-backend-1-4ajn.onrender.com);
 
 // Create 5x5 grid with random numbers 1-25
 const board = document.getElementById('board');
