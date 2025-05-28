@@ -128,7 +128,7 @@ function checkBingo() {
   if ([0, 6, 12, 18, 24].every(i => isMarked(i))) bingoLines++;
   if ([4, 8, 12, 16, 20].every(i => isMarked(i))) bingoLines++;
 
-  return bingoLines >= 5;
+  return bingoLines >= 1;
 }
 
 // Disable all cells (after game over)
