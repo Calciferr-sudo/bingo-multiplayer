@@ -57,3 +57,22 @@ function checkBingo() {
 
   return bingoLines >= 1;
 }
+const chatBox = document.getElementById("chatBox");
+const chatInput = document.getElementById("chatInput");
+
+chatInput.addEventListener("keydown", function (e) {
+  if (e.key === "Enter" && chatInput.value.trim()) {
+    socket.emit("chatMessage", {
+      name: playerName,
+      text: chatInput.value.trim()
+    });
+    chatInput.value = "";
+  }
+});
+
+socket.on("chatMessage", (msg) => {
+  const line = document.createElement("div");
+  line.innerHTML = `<strong>${msg.name}:</strong> ${msg.text}`;
+  chatBox.append(line);
+  chatBox.scrollTop = chatBox.scrollHeight;
+});
