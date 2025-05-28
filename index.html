@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Multiplayer Bingo Game</title>
 
-  <!-- 🎨 Stylish CSS -->
-  <style>
+   <style>
     * {
       box-sizing: border-box;
       padding: 0;
@@ -129,17 +128,21 @@
   <div id="message">Connecting...</div>
   <div id="board"></div>
   <div id="countdown">⏳ 10s</div>
+
+  <h3>Players:</h3>
   <ul id="playerList"></ul>
+
+  <h3>Scoreboard:</h3>
   <ul id="scoreboard"></ul>
-  <div id="message"></div>
+
   <button id="playAgain" style="display:none;">Play Again</button>
 
-  
   <div id="confetti" style="position: fixed; inset: 0; pointer-events: none; display: none;"></div>
+
   <!-- Socket.IO -->
- 
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <script src="script.js"></script>
    
 </body>
 </html>
+
