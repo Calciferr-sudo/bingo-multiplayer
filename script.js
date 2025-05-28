@@ -1,8 +1,9 @@
-
-  
+<script>
 const socket = io('https://bingo-backend-1-4ajn.onrender.com');
+let playerName = prompt("Enter your name:");
+socket.emit("joinGame", playerName);
 
-// Create 5x5 grid with random numbers 1-25
+// Setup board
 const board = document.getElementById('board');
 let numbers = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
 let marked = Array(25).fill(false);
@@ -14,63 +15,88 @@ numbers.forEach((num, idx) => {
   cell.dataset.index = idx;
 
   cell.addEventListener('click', () => {
-    socket.emit('markNumber', num);
+    if (!marked[idx]) socket.emit('markNumber', num);
   });
 
   board.appendChild(cell);
 });
 
-// Listen for update to mark a number
+// Mark Number
 socket.on('markNumber', (num) => {
   const idx = numbers.indexOf(num);
   if (idx > -1 && !marked[idx]) {
     marked[idx] = true;
     document.querySelectorAll('.cell')[idx].classList.add('marked');
   }
-
   if (checkBingo()) {
     socket.emit('declareWin');
   }
 });
 
-// Game over signal
-socket.on('gameOver', () => {
-  showMessage("🎉 BINGO! YOU WIN!");
+// Game Over
+socket.on('gameOver', (winnerName) => {
+  showMessage(`🎉 ${winnerName} WON!`);
   disableBoard();
-  gameOver = true;
   document.getElementById("playAgain").style.display = "inline";
 });
 
-// Bingo Check
-function checkBingo() {
-  const isMarked = (i) => marked[i];
+// Reset Game
+socket.on('resetGame', () => {
+  location.reload(); // Simple reload to reset board (can replace with smarter reset)
+});
 
-  let bingoLines = 0;
+// Countdown Timer
+socket.on("countdown", (time) => {
+  document.getElementById("countdown").innerText = `⏳ ${time}s`;
+});
 
-  // Rows
-  for (let i = 0; i < 25; i += 5)
-    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j))) bingoLines++;
+// Player List
+socket.on('updatePlayers', (players) => {
+  const list = document.getElementById("playerList");
+  list.innerHTML = "";
+  Object.values(players).forEach(name => {
+    const li = document.createElement("li");
+    li.textContent = name;
+    list.appendChild(li);
+  });
+});
 
-  // Columns
-  for (let i = 0; i < 5; i++)
-    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j * 5))) bingoLines++;
-
-  // Diagonals
-  if ([0, 6, 12, 18, 24].every(i => isMarked(i))) bingoLines++;
-  if ([4, 8, 12, 16, 20].every(i => isMarked(i))) bingoLines++;
-
-  return bingoLines >= 1;
-}
-const chatBox = document.getElementById("chatBox");
-const chatInput = document.getElementById("chatInput");
-
-chatInput.addEventListener("keydown", function (e) {
-  if (e.key === "Enter" && chatInput.value.trim()) {
-    socket.emit("chatMessage", {
-      name: playerName,
-      text: chatInput.value.trim()
-    });
-    chatInput.value = "";
+// Scoreboard
+socket.on("updateScoreboard", (scoreboard) => {
+  const board = document.getElementById("scoreboard");
+  board.innerHTML = "";
+  for (const [name, score] of Object.entries(scoreboard)) {
+    const li = document.createElement("li");
+    li.textContent = `${name}: ${score}`;
+    board.appendChild(li);
   }
 });
 
+// Play Again Button
+document.getElementById("playAgain").addEventListener("click", () => {
+  socket.emit("playAgain");
+});
+
+// Bingo check
+function checkBingo() {
+  const isMarked = (i) => marked[i];
+  let bingoLines = 0;
+  for (let i = 0; i < 25; i += 5)
+    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j))) bingoLines++;
+  for (let i = 0; i < 5; i++)
+    if ([0, 1, 2, 3, 4].every(j => isMarked(i + j * 5))) bingoLines++;
+  if ([0, 6, 12, 18, 24].every(i => isMarked(i))) bingoLines++;
+  if ([4, 8, 12, 16, 20].every(i => isMarked(i))) bingoLines++;
+  return bingoLines >= 5;
+}
+
+function disableBoard() {
+  document.querySelectorAll('.cell').forEach(cell => {
+    cell.style.pointerEvents = "none";
+  });
+}
+
+function showMessage(text) {
+  document.getElementById("message").innerText = text;
+}
+</script>
