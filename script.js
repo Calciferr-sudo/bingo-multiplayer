@@ -14,7 +14,7 @@ const sendChatBtn = document.getElementById('send-chat-btn');
 const messageModal = document.getElementById('message-modal');
 const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
-const modalOkBtn = document = document.getElementById('modal-ok-btn');
+const modalOkBtn = document.getElementById('modal-ok-btn');
 
 // --- Game State Variables ---
 
@@ -43,7 +43,7 @@ function showMessageModal(title, message) {
  * Hides the custom message box modal.
  */
 function hideMessageModal() {
-    modalMessage.style.display = 'none'; // Hide the modal
+    messageModal.style.display = 'none'; // Hide the modal
 }
 
 /**
@@ -160,9 +160,12 @@ modalOkBtn.addEventListener('click', hideMessageModal);
 startGameBtn.addEventListener('click', () => {
     // Only allow starting if game is not already started
     if (!gameStarted) {
+        console.log('Attempting to start game...');
         socket.emit('startGame'); // Request server to start the game
         startGameBtn.disabled = true; // Disable button after requesting start
         gameStatusElement.innerText = "Requesting game start...";
+    } else {
+        console.log('Start Game button clicked but game already started or request already sent.');
     }
 });
 
@@ -170,9 +173,12 @@ startGameBtn.addEventListener('click', () => {
 resetGameBtn.addEventListener('click', () => {
     // Only allow reset if game has started
     if (gameStarted) {
+        console.log('Attempting to reset game...');
         socket.emit('resetGame'); // Request server to reset the game
         resetGameBtn.disabled = true; // Disable button after requesting reset
         gameStatusElement.innerText = "Requesting game reset...";
+    } else {
+        console.log('Reset Game button clicked but no active game to reset.');
     }
 });
 
@@ -200,55 +206,62 @@ socket.on('connect', () => {
     playerIdSpan.innerText = currentPlayerId;
     playerInfoElement.style.display = 'block';
     gameStatusElement.innerText = "Connected. Waiting for server to update game state...";
+    console.log(`Connected with ID: ${currentPlayerId}`);
 });
 
 // Listen for game state updates from the server
 socket.on('gameState', (state) => {
-    // --- ADDED DEFENSIVE CHECKS HERE ---
+    // --- ADDED MORE CONSOLE LOGS HERE ---
+    console.log('Received gameState:', state);
+
     if (!state || !Array.isArray(state.players) || !Array.isArray(state.markedNumbers)) {
         console.error("Received an invalid gameState object. Missing or malformed 'players' or 'markedNumbers'.", state);
         gameStatusElement.innerText = "Error: Invalid game state received from server. Please refresh.";
         startGameBtn.disabled = true;
         resetGameBtn.disabled = true;
         disableBoardClicks();
-        // Reset board visually if state is invalid
         marked.fill(false);
         document.querySelectorAll('.cell').forEach(cell => {
             cell.classList.remove('marked');
         });
-        return; // Exit early if state is invalid
+        return;
     }
-    // --- END DEFENSIVE CHECKS ---
-
 
     gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
 
+    console.log(`Updated client state: gameStarted=${gameStarted}, isMyTurn=${isMyTurn}, players.length=${state.players.length}`);
+
     if (!gameStarted) { // If the game is currently NOT started
-        if (state.players.length>= 2) { // <-- This is the problematic line now
-            startGameBtn.disabled = false; // Enable the 'Start Game' button
+        if (state.players.length >= 2) {
+            startGameBtn.disabled = false;
             gameStatusElement.innerText = "Two players ready! Click 'Start Game' to begin.";
-        } else { // If there are less than 2 players
-            startGameBtn.disabled = true; // Keep the 'Start Game' button disabled
+            console.log('UI Update: Start Game button ENABLED (2+ players, game not started)');
+        } else {
+            startGameBtn.disabled = true;
             gameStatusElement.innerText = "Connected. Waiting for another player to join...";
+            console.log('UI Update: Start Game button DISABLED (<2 players, game not started)');
         }
-        resetGameBtn.disabled = true; // 'Reset Game' button should be disabled when game not started
-        disableBoardClicks(); // Board clicks should be disabled when game not started
+        resetGameBtn.disabled = true;
+        disableBoardClicks();
+        console.log('UI Update: Reset Game button DISABLED, board clicks DISABLED');
     }
     else { // If game IS started
         startGameBtn.disabled = true;
         resetGameBtn.disabled = false;
+        console.log('UI Update: Start Game button DISABLED, Reset Game button ENABLED');
         if (isMyTurn) {
             gameStatusElement.innerText = "Your Turn! Click a number to call it.";
             enableBoardClicks();
+            console.log('UI Update: It is your turn, board clicks ENABLED');
         } else {
             gameStatusElement.innerText = `Waiting for ${state.currentTurnPlayerId} to call a number.`;
             disableBoardClicks();
+            console.log('UI Update: Not your turn, board clicks DISABLED');
         }
     }
 
     // Update board based on globally marked numbers
-    // This block is now safe because of the checks at the top
     document.querySelectorAll('.cell').forEach(cell => {
         cell.classList.remove('marked');
     });
@@ -256,25 +269,24 @@ socket.on('gameState', (state) => {
     state.markedNumbers.forEach(num => {
         const idx = numbers.indexOf(num);
         if (idx > -1) {
-            marked[idx] = true; // Update local marked array
-            document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
+            marked[idx] = true;
+            document.querySelectorAll('.cell')[idx].classList.add('marked');
         }
     });
+    console.log('UI Update: Board marked based on server state.');
 });
 
 // Listen for a number being marked (called) by any player
 socket.on('numberMarked', (num) => {
+    console.log(`Number ${num} marked by server confirmation.`);
     const idx = numbers.indexOf(num);
     if (idx > -1 && !marked[idx]) {
         marked[idx] = true; // Mark the number in local state
         document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
         gameStatusElement.innerText = `Number ${num} was called!`; // Update status
 
-        // Call checkBingo() to get the current line count (without applying visual strikes)
         const currentBingoLineCount = checkBingo();
-
-        // Now, use the returned count for your win condition
-        if (gameStarted && currentBingoLineCount === 5) { // Assuming 5 lines for a win
+        if (gameStarted && currentBingoLineCount === 5) {
             console.log(`Player ${currentPlayerId} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
         }
@@ -283,10 +295,11 @@ socket.on('numberMarked', (num) => {
 
 // Listen for a player declaring win
 socket.on('playerDeclaredWin', (winningPlayerId) => {
-    disableBoardClicks(); // Disable board interaction for everyone
-    gameStarted = false; // End the game
-    startGameBtn.disabled = false; // Re-enable start button
-    resetGameBtn.disabled = false; // Enable reset button
+    console.log(`Player ${winningPlayerId} declared win. Game ending.`);
+    disableBoardClicks();
+    gameStarted = false;
+    startGameBtn.disabled = false;
+    resetGameBtn.disabled = false;
     if (winningPlayerId === currentPlayerId) {
         showMessageModal("Congratulations!", "BINGO! You won the game!");
         gameStatusElement.innerText = "You won! Click 'Reset Game' to start a new round.";
@@ -298,6 +311,7 @@ socket.on('playerDeclaredWin', (winningPlayerId) => {
 
 // Listen for game reset event from server
 socket.on('gameReset', () => {
+    console.log('Game reset event received from server.');
     initializeBoard(); // This calls initializeBoard which clears the board
     gameStarted = false;
     isMyTurn = false;
@@ -309,13 +323,13 @@ socket.on('gameReset', () => {
 
 // Listen for incoming chat messages
 socket.on('message', (data) => {
-    // Determine if the message is from the current player
     const isSelf = data.senderId === currentPlayerId;
     addChatMessage(data.senderId, data.message, isSelf);
 });
 
 // Listen for server errors or disconnections
 socket.on('disconnect', () => {
+    console.log('Disconnected from server.');
     gameStatusElement.innerText = "Disconnected from server. Please refresh.";
     startGameBtn.disabled = true;
     resetGameBtn.disabled = true;
@@ -324,6 +338,7 @@ socket.on('disconnect', () => {
 });
 
 socket.on('connect_error', (error) => {
+    console.error('Socket connection error:', error);
     gameStatusElement.innerText = "Connection error. Please check server status.";
     showMessageModal("Connection Error", `Could not connect to the game server: ${error.message}`);
 });
@@ -332,3 +347,4 @@ socket.on('connect_error', (error) => {
 initializeBoard(); // Render the initial board when the page loads
 startGameBtn.disabled = true; // Disable start button until connected
 resetGameBtn.disabled = true; // Disable reset button initially
+console.log('Initial setup complete. Buttons disabled.');
