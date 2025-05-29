@@ -11,23 +11,6 @@
             box-sizing: border-box;
         }
       
-
-    /* Style for cells that form a completed Bingo line */
-    .cell.bingo-line-strike {
-    background-color: #fdd835; /* A yellowish color to highlight the line */
-    box-shadow: 0 0 10px rgba(253, 216, 53, 0.8); /* Optional: add a subtle glow */
-    /* You can experiment with other styles, e.g., a bolder border or a subtle animation */
-    /* If you want a literal line through the text, it's more complex with current structure,
-       but background change is very effective and clear. */
-    }
-
-    /* Ensure marked cells still look distinct, even if they are part of a struck line */
-    /* This combines the marked color with the line-strike color */
-    
-    .cell.marked.bingo-line-strike {
-    background-color: #ffb300; /* A slightly darker orange/yellow when both marked and struck */
-    box-shadow: 0 0 12px rgba(255, 179, 0, 0.9);
-    }
         body {
             margin: 0;
             padding: 0;
@@ -38,75 +21,49 @@
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 20px; /* Add some padding for smaller screens */
+            color: #333;
         }
 
         h1 {
             color: #333;
             font-size: 2.5rem;
-            margin-bottom: 20px;
-            text-align: center;
+            margin-bottom: 30px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-        }
-
-        h4 {
-            color: #333;
-            font-size: 0.9rem;
-            margin-top: 20px;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-            text-align: center;
         }
 
         .game-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            width: 100%;
-            max-width: 450px; /* Increased max-width slightly for better layout */
             background: white;
+            padding: 30px;
             border-radius: 16px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            padding: 20px;
-            margin-bottom: 20px; /* Space below the container */
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            text-align: center;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 500px;
         }
 
         #player-info, #game-status {
-            width: 100%;
-            text-align: center;
+            font-size: 1.1rem;
             margin-bottom: 15px;
-            font-size: 0.95rem;
-            color: #555;
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 8px;
-            border: 1px solid #ddd;
+            font-weight: 600;
         }
 
-        #game-status {
-            font-weight: 600;
+        #player-id {
             color: #007bff;
         }
 
         .controls {
-            display: flex;
-            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
-            gap: 10px;
             margin-bottom: 20px;
-            justify-content: center;
-            width: 100%;
         }
 
         .btn {
-            padding: 12px 25px;
-            font-size: 1rem;
-            font-weight: 600;
+            padding: 10px 20px;
             border: none;
-            border-radius: 10px;
+            border-radius: 8px;
+            font-size: 1rem;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            flex-grow: 1; /* Allow buttons to grow */
-            max-width: 180px; /* Max width for buttons */
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            margin: 0 5px;
         }
 
         .btn-primary {
@@ -114,10 +71,9 @@
             color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background-color: #0056b3;
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .btn-secondary {
@@ -125,51 +81,49 @@
             color: white;
         }
 
-        .btn-secondary:hover {
-            background-color: #5a6268;
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #545b62;
             transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .btn:disabled {
-            background-color: #cccccc;
+            background-color: #ccc;
             cursor: not-allowed;
-            box-shadow: none;
-            transform: none;
+            opacity: 0.7;
         }
 
         #board {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            width: 100%; /* Use 100% of parent width */
-            aspect-ratio: 1 / 1;
-            gap: 8px; /* Slightly reduced gap */
-            padding: 15px; /* Reduced padding */
-            background: #fdfdfd; /* Lighter background for board */
-            border-radius: 12px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.05); /* Inner shadow */
-            border: 1px solid #eee;
+            grid-template-rows: repeat(5, 1fr);
+            gap: 10px;
+            padding: 20px;
+            background: #f0f0f0;
+            border-radius: 10px;
+            width: 100%;
+            aspect-ratio: 1 / 1; /* Makes the board perfectly square */
         }
 
         .cell {
-            background-color: #e9ecef; /* Lighter default cell */
-            border: 1px solid #ced4da;
+            background-color: #f8f9fa;
+            border: 2px solid #ccc;
             border-radius: 8px;
             text-align: center;
-            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-size: 1.2rem;
             font-weight: 600;
-            color: #495057;
+            color: #555;
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
             user-select: none;
-            transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
-            cursor: pointer; /* Indicate clickable */
+            position: relative; /* Needed for positioning pseudo-elements */
         }
 
-        .cell:hover:not(.marked):not(.disabled-cell) {
-            background-color: #d0e9ff; /* Light blue on hover */
-            transform: scale(1.03); /* Slightly less aggressive scale */
+        .cell:hover:not(.disabled-cell) {
+            background-color: #dfe9f3;
+            transform: scale(1.05);
         }
 
         .marked {
@@ -177,40 +131,47 @@
             color: white;
             border-color: #3da278;
             transform: scale(1.05);
-            cursor: default; /* Not clickable when marked */
         }
 
         .disabled-cell {
+            opacity: 0.6;
             cursor: not-allowed;
-            opacity: 0.7;
         }
+
+        /* Removed all .bingo-line-strike CSS rules */
+
 
         /* Chat Section */
         .chat-section {
-            width: 100%;
-            max-width: 450px;
             background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
             padding: 20px;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+            width: 90%;
+            max-width: 500px;
             margin-top: 20px;
+        }
+
+        .chat-section h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
         }
 
         #chat-messages {
             height: 200px;
-            overflow-y: auto;
             border: 1px solid #e0e0e0;
             border-radius: 8px;
             padding: 10px;
+            overflow-y: auto;
             margin-bottom: 15px;
             background-color: #fcfcfc;
-            font-size: 0.9rem;
-            line-height: 1.4;
         }
 
         .chat-message {
-            margin-bottom: 5px;
-            word-wrap: break-word;
+            margin-bottom: 8px;
+            line-height: 1.4;
         }
 
         .chat-message strong {
@@ -219,16 +180,15 @@
 
         .chat-input-group {
             display: flex;
-            gap: 10px;
         }
 
         #chat-input {
             flex-grow: 1;
             padding: 10px;
-            border: 1px solid #ced4da;
+            border: 1px solid #ccc;
             border-radius: 8px;
-            font-family: 'Poppins', sans-serif;
-            font-size: 0.95rem;
+            font-size: 1rem;
+            margin-right: 10px;
         }
 
         #send-chat-btn {
@@ -238,14 +198,20 @@
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease;
         }
 
         #send-chat-btn:hover {
             background-color: #218838;
         }
 
-        /* Message Box Modal */
+        h4 {
+            color: #666;
+            margin-top: 30px;
+            font-weight: normal;
+        }
+
+        /* Modal Styles */
         .message-modal {
             display: none; /* Hidden by default */
             position: fixed; /* Stay in place */
@@ -263,37 +229,38 @@
         .message-modal-content {
             background-color: #fefefe;
             margin: auto;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
-            width: 90%;
+            padding: 25px;
+            border: 1px solid #888;
+            border-radius: 10px;
+            width: 80%;
             max-width: 400px;
             text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             animation: fadeIn 0.3s ease-out;
         }
 
         .message-modal-content h2 {
             margin-top: 0;
-            color: #333;
+            color: #007bff;
             font-size: 1.8rem;
             margin-bottom: 15px;
         }
 
         .message-modal-content p {
             font-size: 1.1rem;
-            color: #555;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
+            line-height: 1.5;
         }
 
         .message-modal-content button {
             background-color: #007bff;
             color: white;
-            padding: 10px 20px;
+            padding: 10px 25px;
             border: none;
-            border-radius: 8px;
+            border-radius: 5px;
             cursor: pointer;
             font-size: 1rem;
-            transition: background-color 0.3s ease;
+            transition: background-color 0.2s ease;
         }
 
         .message-modal-content button:hover {
@@ -301,41 +268,27 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
         }
 
-
-        @media (max-width: 500px) {
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
             h1 {
-                font-size: 1.8rem;
-            }
-
-            h4 {
-                font-size: 0.75rem;
+                font-size: 2rem;
             }
 
             .game-container, .chat-section {
-                padding: 15px;
-            }
-
-            .controls {
-                flex-direction: column; /* Stack buttons on very small screens */
-                gap: 8px;
-            }
-
-            .btn {
-                width: 100%; /* Full width for stacked buttons */
-                max-width: none;
+                padding: 20px;
             }
 
             #board {
-                gap: 5px;
-                padding: 10px;
+                gap: 8px;
+                padding: 15px;
             }
 
             .cell {
-                font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+                font-size: 1rem;
             }
 
             #chat-messages {

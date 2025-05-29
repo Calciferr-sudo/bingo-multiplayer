@@ -18,7 +18,7 @@ const modalOkBtn = document.getElementById('modal-ok-btn');
 
 // --- Game State Variables ---
 
-let struckLines = []; // To store the indices of cells in lines that have been visually struck
+// Removed 'struckLines' variable as it's for the strike-out feature
 let numbers = []; // Array to hold the numbers on the player's board (1-25, shuffled)
 let marked = Array(25).fill(false); // Boolean array to track marked cells
 let gameStarted = false; // Flag to indicate if the game has started
@@ -50,18 +50,12 @@ function hideMessageModal() {
  * Initializes or resets the Bingo board.
  * Shuffles numbers, clears marked cells, and updates the DOM.
  */
-// In script.js, find your initializeBoard() function:
 function initializeBoard() {
     numbers = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
     marked.fill(false);
     boardElement.innerHTML = ''; // This clears existing cells
 
-    // Also clear any previous visual strike-throughs and the record of struck lines
-    struckLines = []; // Clear the stored lines
-    // If boardElement.innerHTML is cleared, new cells won't have the class.
-    // But if you re-use existing cells, you'd iterate and remove.
-    // Given your boardElement.innerHTML = '';, this is implicitly handled for new cells.
-    // However, if any other part of the game recreates cells, ensure this is done.
+    // No need to clear struckLines here as the feature is removed
 
     numbers.forEach((num, idx) => {
         const cell = document.createElement('div');
@@ -69,7 +63,22 @@ function initializeBoard() {
         cell.innerText = num;
         cell.dataset.index = idx;
 
-        // ... (existing cell click listener) ...
+        // Existing cell click listener (unchanged)
+        cell.addEventListener('click', () => {
+            if (gameStarted && isMyTurn && !marked[idx]) {
+                const calledNumber = parseInt(cell.innerText);
+                socket.emit('markNumber', calledNumber); // Emit the number to the server
+                // No need to mark locally immediately; wait for server confirmation via 'numberMarked'
+                disableBoardClicks(); // Disable clicks after calling a number
+            } else if (!gameStarted) {
+                showMessageModal("Game Not Started", "The game has not started yet. Click 'Start Game' to begin.");
+            } else if (!isMyTurn) {
+                showMessageModal("Not Your Turn", "It's not your turn to call a number.");
+            } else if (marked[idx]) {
+                showMessageModal("Already Marked", "This number has already been called.");
+            }
+        });
+
         boardElement.appendChild(cell);
     });
     disableBoardClicks();
@@ -99,16 +108,12 @@ function disableBoardClicks() {
 
 /**
  * Checks for Bingo lines (rows, columns, diagonals).
- * Returns true if at least one Bingo line is found.
- * Note: The original code returned true only if bingoLines == 5.
- * For typical Bingo, one line is enough to win.
- * I've kept the original logic for 5 lines, but you can change it to `bingoLines >= 1` for standard Bingo.
- * @returns {boolean} - True if Bingo is achieved, false otherwise.
+ * Returns the count of completed Bingo lines.
+ * This version does NOT apply visual strike-throughs (CSS classes).
+ * @returns {number} - The total count of completed lines.
  */
-// In script.js, find your checkBingo() function and REPLACE IT with this:
 function checkBingo() {
     const isCellMarked = (i) => marked[i];
-    const cells = document.querySelectorAll('.cell'); // Get all cell DOM elements
 
     // Define all possible lines (rows, columns, diagonals) by their cell indices
     const allPossibleLines = [
@@ -122,23 +127,10 @@ function checkBingo() {
 
     let bingoLineCount = 0; // This will count the total completed lines for win condition
 
-    // First, remove the 'bingo-line-strike' class from all cells.
-    // We will re-apply it only to currently completed lines to ensure accuracy.
-    cells.forEach(cell => cell.classList.remove('bingo-line-strike'));
-    struckLines = []; // Clear the record of struck lines before re-evaluating
-
     allPossibleLines.forEach(lineIndices => {
         // Check if all cells in this line are marked
         if (lineIndices.every(isCellMarked)) {
-            bingoLineCount++; // Increment count for win condition
-
-            // Add the 'bingo-line-strike' class to each cell in this completed line
-            lineIndices.forEach(idx => {
-                cells[idx].classList.add('bingo-line-strike');
-            });
-
-            // Record this line as struck to ensure it stays visually marked (though not strictly needed with re-apply strategy)
-            struckLines.push(lineIndices);
+            bingoLineCount++;
         }
     });
 
@@ -205,20 +197,12 @@ chatInput.addEventListener('keypress', (e) => {
 
 // --- Socket.IO Event Listeners ---
 
-// --- Socket.IO Event Listeners ---
-
 // When connected to the server, receive and display player ID
 socket.on('connect', () => {
     currentPlayerId = socket.id;
     playerIdSpan.innerText = currentPlayerId;
     playerInfoElement.style.display = 'block';
-    // REMOVE THE FOLLOWING 'if' block. The button state will be handled by 'gameState'.
-    /*
-    if (!gameStarted) {
-        startGameBtn.disabled = false;
-    }
-    */
-    gameStatusElement.innerText = "Connected. Waiting for server to update game state..."; // More generic initial message
+    gameStatusElement.innerText = "Connected. Waiting for server to update game state...";
 });
 
 // Listen for game state updates from the server
@@ -226,7 +210,6 @@ socket.on('gameState', (state) => {
     gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
 
-    // --- CORRECTED LOGIC FOR START GAME BUTTON AND STATUS ---
     if (!gameStarted) { // If the game is currently NOT started
         if (state.players.length >= 2) { // And if there are 2 or more players connected
             startGameBtn.disabled = false; // Enable the 'Start Game' button
@@ -238,9 +221,7 @@ socket.on('gameState', (state) => {
         resetGameBtn.disabled = true; // 'Reset Game' button should be disabled when game not started
         disableBoardClicks(); // Board clicks should be disabled when game not started
     }
-    // --- END CORRECTED LOGIC ---
-
-    else { // If game IS started (existing logic for during-game)
+    else { // If game IS started
         startGameBtn.disabled = true;
         resetGameBtn.disabled = false;
         if (isMyTurn) {
@@ -254,12 +235,12 @@ socket.on('gameState', (state) => {
 
     // Update board based on globally marked numbers (if provided by server)
     if (state.markedNumbers) {
-        // First, reset all cells visually (marked and strike classes)
+        // First, reset all cells visually (marked, but NOT strike classes)
         document.querySelectorAll('.cell').forEach(cell => {
             cell.classList.remove('marked');
-            cell.classList.remove('bingo-line-strike'); // Also clear strike classes here
+            // Removed: cell.classList.remove('bingo-line-strike');
         });
-        struckLines = []; // Clear local tracking of struck lines for full state sync
+        // Removed: struckLines = []; // Clear local tracking of struck lines for full state sync
 
         // Then, mark the ones provided by the server
         state.markedNumbers.forEach(num => {
@@ -269,13 +250,11 @@ socket.on('gameState', (state) => {
                 document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
             }
         });
-        // After updating all marked numbers from state, re-evaluate and apply strike lines
-        checkBingo(); // Call checkBingo to apply the visual strikes based on the updated 'marked' array
+        // Removed: checkBingo(); // Removed call to apply visual strikes
     }
 });
 
 // Listen for a number being marked (called) by any player
-
 socket.on('numberMarked', (num) => {
     const idx = numbers.indexOf(num);
     if (idx > -1 && !marked[idx]) {
@@ -283,10 +262,8 @@ socket.on('numberMarked', (num) => {
         document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
         gameStatusElement.innerText = `Number ${num} was called!`; // Update status
 
-        // --- ADD/UPDATE THIS CALL ---
-        // Call the updated checkBingo() function to apply visual strikes and get the current line count
+        // Call checkBingo() to get the current line count (without applying visual strikes)
         const currentBingoLineCount = checkBingo();
-        // ---------------------------
 
         // Now, use the returned count for your win condition
         if (gameStarted && currentBingoLineCount === 5) { // Assuming 5 lines for a win
@@ -295,6 +272,7 @@ socket.on('numberMarked', (num) => {
         }
     }
 });
+
 // Listen for a player declaring win
 socket.on('playerDeclaredWin', (winningPlayerId) => {
     disableBoardClicks(); // Disable board interaction for everyone
@@ -311,15 +289,9 @@ socket.on('playerDeclaredWin', (winningPlayerId) => {
 });
 
 // Listen for game reset event from server
-// In script.js, find socket.on('gameReset', () => { ... }):
 socket.on('gameReset', () => {
-    initializeBoard(); // This calls initializeBoard which clears the board and resets struckLines implicitly
-    // Explicitly ensure struckLines is clear if initializeBoard doesn't clear it fully or if you skip it
-    struckLines = [];
-    // No need to manually remove 'bingo-line-strike' classes here if initializeBoard re-creates cells.
-    // If initializeBoard simply updates existing cells, then you'd need a loop here.
-    // Based on boardElement.innerHTML = ''; in initializeBoard, it's fine.
-
+    initializeBoard(); // This calls initializeBoard which clears the board
+    // Removed: struckLines = []; // No need to clear struckLines
     gameStarted = false;
     isMyTurn = false;
     startGameBtn.disabled = false;
