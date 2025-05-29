@@ -55,8 +55,6 @@ function initializeBoard() {
     marked.fill(false);
     boardElement.innerHTML = ''; // This clears existing cells
 
-    // No need to clear struckLines here as the feature is removed
-
     numbers.forEach((num, idx) => {
         const cell = document.createElement('div');
         cell.classList.add('cell');
@@ -82,7 +80,6 @@ function initializeBoard() {
         boardElement.appendChild(cell);
     });
     disableBoardClicks();
-    // No need to call checkBingo() here as no numbers are marked yet.
 }
 
 /**
@@ -234,13 +231,12 @@ socket.on('gameState', (state) => {
     }
 
     // Update board based on globally marked numbers (if provided by server)
+    // ADDED DEFENSIVE CHECK HERE for markedNumbers
     if (state.markedNumbers) {
-        // First, reset all cells visually (marked, but NOT strike classes)
+        // First, reset all cells visually (marked)
         document.querySelectorAll('.cell').forEach(cell => {
             cell.classList.remove('marked');
-            // Removed: cell.classList.remove('bingo-line-strike');
         });
-        // Removed: struckLines = []; // Clear local tracking of struck lines for full state sync
 
         // Then, mark the ones provided by the server
         state.markedNumbers.forEach(num => {
@@ -250,7 +246,13 @@ socket.on('gameState', (state) => {
                 document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
             }
         });
-        // Removed: checkBingo(); // Removed call to apply visual strikes
+    } else {
+        // If markedNumbers is undefined or null, ensure marked array is reset to prevent stale state
+        marked.fill(false);
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.classList.remove('marked');
+        });
+        console.warn("Received gameState with undefined or null markedNumbers. Resetting board visually.");
     }
 });
 
@@ -291,7 +293,6 @@ socket.on('playerDeclaredWin', (winningPlayerId) => {
 // Listen for game reset event from server
 socket.on('gameReset', () => {
     initializeBoard(); // This calls initializeBoard which clears the board
-    // Removed: struckLines = []; // No need to clear struckLines
     gameStarted = false;
     isMyTurn = false;
     startGameBtn.disabled = false;
