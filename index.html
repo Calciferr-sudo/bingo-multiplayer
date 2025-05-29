@@ -1,108 +1,367 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Bingo Multiplayer</title>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Bingo Multiplayer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
 
-    * {
-      box-sizing: border-box;
-    }
+        * {
+            box-sizing: border-box;
+        }
 
-    body {
-      margin: 0;
-      padding: 0;
-      font-family: 'Poppins', sans-serif;
-      background: linear-gradient(to right, #f8f9fa, #e0eafc);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-    }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to right, #f8f9fa, #e0eafc);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px; /* Add some padding for smaller screens */
+        }
 
-    h1 {
-      color: #333;
-      font-size: 2.5rem;
-      margin-bottom: 30px;
-      text-align: center;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-    }
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
 
-    h4 {
-      color: #333;
-      font-size: 0.9rem;
-      margin-top: 20px;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
-      text-align: center;
-    }
+        h4 {
+            color: #333;
+            font-size: 0.9rem;
+            margin-top: 20px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+            text-align: center;
+        }
 
-    #board {
-      display: grid;
-      grid-template-columns: repeat(5, 1fr);
-      width: 90vw;
-      max-width: 400px;
-      aspect-ratio: 1 / 1;
-      gap: 10px;
-      padding: 20px;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-    }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 450px; /* Increased max-width slightly for better layout */
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 20px; /* Space below the container */
+        }
 
-    .cell {
-      background-color: #f8f9fa;
-      border: 2px solid #ccc;
-      border-radius: 8px;
-      text-align: center;
-      font-size: clamp(1rem, 4vw, 1.2rem);
-      font-weight: 600;
-      color: #555;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-      transition: 0.2s ease;
-    }
+        #player-info, #game-status {
+            width: 100%;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 0.95rem;
+            color: #555;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+        }
 
-    .cell:hover {
+        #game-status {
+            font-weight: 600;
+            color: #007bff;
+        }
 
-      background-color:##20b049;
-      transform: scale(1.05);
-    }
+        .controls {
+            display: flex;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            width: 100%;
+        }
 
-    .marked {
-      background-color: #48c78e;
-      color: white;
-      border-color: #3da278;
-      transform: scale(1.05);
-    }
+        .btn {
+            padding: 12px 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            flex-grow: 1; /* Allow buttons to grow */
+            max-width: 180px; /* Max width for buttons */
+        }
 
-    @media (max-width: 500px) {
-      h1 {
-        font-size: 1.8rem;
-      }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
 
-      h4 {
-        font-size: 0.75rem;
-      }
+        .btn-primary:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
 
-      #board {
-        gap: 5px;
-        padding: 15px;
-      }
-    }
-  </style>
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        #board {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            width: 100%; /* Use 100% of parent width */
+            aspect-ratio: 1 / 1;
+            gap: 8px; /* Slightly reduced gap */
+            padding: 15px; /* Reduced padding */
+            background: #fdfdfd; /* Lighter background for board */
+            border-radius: 12px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.05); /* Inner shadow */
+            border: 1px solid #eee;
+        }
+
+        .cell {
+            background-color: #e9ecef; /* Lighter default cell */
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            text-align: center;
+            font-size: clamp(1rem, 4vw, 1.2rem);
+            font-weight: 600;
+            color: #495057;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: background-color 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+            cursor: pointer; /* Indicate clickable */
+        }
+
+        .cell:hover:not(.marked):not(.disabled-cell) {
+            background-color: #d0e9ff; /* Light blue on hover */
+            transform: scale(1.03); /* Slightly less aggressive scale */
+        }
+
+        .marked {
+            background-color: #48c78e;
+            color: white;
+            border-color: #3da278;
+            transform: scale(1.05);
+            cursor: default; /* Not clickable when marked */
+        }
+
+        .disabled-cell {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Chat Section */
+        .chat-section {
+            width: 100%;
+            max-width: 450px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        #chat-messages {
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 15px;
+            background-color: #fcfcfc;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .chat-message {
+            margin-bottom: 5px;
+            word-wrap: break-word;
+        }
+
+        .chat-message strong {
+            color: #007bff;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #chat-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-size: 0.95rem;
+        }
+
+        #send-chat-btn {
+            padding: 10px 15px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #send-chat-btn:hover {
+            background-color: #218838;
+        }
+
+        /* Message Box Modal */
+        .message-modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .message-modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .message-modal-content h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+        }
+
+        .message-modal-content p {
+            font-size: 1.1rem;
+            color: #555;
+            margin-bottom: 25px;
+        }
+
+        .message-modal-content button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .message-modal-content button:hover {
+            background-color: #0056b3;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+
+        @media (max-width: 500px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            h4 {
+                font-size: 0.75rem;
+            }
+
+            .game-container, .chat-section {
+                padding: 15px;
+            }
+
+            .controls {
+                flex-direction: column; /* Stack buttons on very small screens */
+                gap: 8px;
+            }
+
+            .btn {
+                width: 100%; /* Full width for stacked buttons */
+                max-width: none;
+            }
+
+            #board {
+                gap: 5px;
+                padding: 10px;
+            }
+
+            .cell {
+                font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+            }
+
+            #chat-messages {
+                height: 150px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>🎉 Bingo Multiplayer 🎉</h1>
-  <div id="board"></div>
-  <h4>--Game by Vikas Shetty--</h4>
+    <h1>🎉 Bingo Multiplayer 🎉</h1>
 
-  <!-- Socket.IO -->
-  <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-  <script src="script.js"></script>
+    <div class="game-container">
+        <div id="player-info">Your ID: <span id="player-id">Connecting...</span></div>
+        <div id="game-status">Waiting for game to start...</div>
+
+        <div class="controls">
+            <button id="start-game-btn" class="btn btn-primary">Start Game</button>
+            <button id="reset-game-btn" class="btn btn-secondary" disabled>Reset Game</button>
+        </div>
+
+        <div id="board"></div>
+    </div>
+
+    <div class="chat-section">
+        <h2>Chat</h2>
+        <div id="chat-messages"></div>
+        <div class="chat-input-group">
+            <input type="text" id="chat-input" placeholder="Type your message..." />
+            <button id="send-chat-btn">Send</button>
+        </div>
+    </div>
+
+    <h4>--Game by Vikas Shetty--</h4>
+
+    <div id="message-modal" class="message-modal">
+        <div class="message-modal-content">
+            <h2 id="modal-title"></h2>
+            <p id="modal-message"></p>
+            <button id="modal-ok-btn">OK</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
