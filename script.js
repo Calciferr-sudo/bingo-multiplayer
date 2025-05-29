@@ -14,7 +14,7 @@ const sendChatBtn = document.getElementById('send-chat-btn');
 const messageModal = document.getElementById('message-modal');
 const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
-const modalOkBtn = document.getElementById('modal-ok-btn');
+const modalOkBtn = document = document.getElementById('modal-ok-btn');
 
 // --- Game State Variables ---
 
@@ -43,7 +43,7 @@ function showMessageModal(title, message) {
  * Hides the custom message box modal.
  */
 function hideMessageModal() {
-    messageModal.style.display = 'none'; // Hide the modal
+    modalMessage.style.display = 'none'; // Hide the modal
 }
 
 /**
@@ -204,11 +204,28 @@ socket.on('connect', () => {
 
 // Listen for game state updates from the server
 socket.on('gameState', (state) => {
+    // --- ADDED DEFENSIVE CHECKS HERE ---
+    if (!state || !Array.isArray(state.players) || !Array.isArray(state.markedNumbers)) {
+        console.error("Received an invalid gameState object. Missing or malformed 'players' or 'markedNumbers'.", state);
+        gameStatusElement.innerText = "Error: Invalid game state received from server. Please refresh.";
+        startGameBtn.disabled = true;
+        resetGameBtn.disabled = true;
+        disableBoardClicks();
+        // Reset board visually if state is invalid
+        marked.fill(false);
+        document.querySelectorAll('.cell').forEach(cell => {
+            cell.classList.remove('marked');
+        });
+        return; // Exit early if state is invalid
+    }
+    // --- END DEFENSIVE CHECKS ---
+
+
     gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
 
     if (!gameStarted) { // If the game is currently NOT started
-        if (state.players.length >= 2) { // And if there are 2 or more players connected
+        if (state.players.length>= 2) { // <-- This is the problematic line now
             startGameBtn.disabled = false; // Enable the 'Start Game' button
             gameStatusElement.innerText = "Two players ready! Click 'Start Game' to begin.";
         } else { // If there are less than 2 players
@@ -230,30 +247,19 @@ socket.on('gameState', (state) => {
         }
     }
 
-    // Update board based on globally marked numbers (if provided by server)
-    // ADDED DEFENSIVE CHECK HERE for markedNumbers
-    if (state.markedNumbers) {
-        // First, reset all cells visually (marked)
-        document.querySelectorAll('.cell').forEach(cell => {
-            cell.classList.remove('marked');
-        });
+    // Update board based on globally marked numbers
+    // This block is now safe because of the checks at the top
+    document.querySelectorAll('.cell').forEach(cell => {
+        cell.classList.remove('marked');
+    });
 
-        // Then, mark the ones provided by the server
-        state.markedNumbers.forEach(num => {
-            const idx = numbers.indexOf(num);
-            if (idx > -1) {
-                marked[idx] = true; // Update local marked array
-                document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
-            }
-        });
-    } else {
-        // If markedNumbers is undefined or null, ensure marked array is reset to prevent stale state
-        marked.fill(false);
-        document.querySelectorAll('.cell').forEach(cell => {
-            cell.classList.remove('marked');
-        });
-        console.warn("Received gameState with undefined or null markedNumbers. Resetting board visually.");
-    }
+    state.markedNumbers.forEach(num => {
+        const idx = numbers.indexOf(num);
+        if (idx > -1) {
+            marked[idx] = true; // Update local marked array
+            document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
+        }
+    });
 });
 
 // Listen for a number being marked (called) by any player
