@@ -264,6 +264,15 @@ socket.on('numberMarked', (num) => {
         marked[idx] = true; // Mark the number in local state
         document.querySelectorAll('.cell')[idx].classList.add('marked'); // Add visual mark
         gameStatusElement.innerText = `Number ${num} was called!`; // Update status
+
+          // --- ADD THE FOLLOWING LOGIC HERE ---
+        // After marking the number, check if this player now has bingo
+        // Ensure the game is still considered active before declaring win to avoid re-declaring
+        if (gameStarted && checkBingo()) {
+            console.log(`Player ${currentPlayerId} achieved BINGO! Emitting 'declareWin'.`);
+            socket.emit('declareWin'); // Notify the server that this player has won
+        }
+        // --- END OF NEW LOGIC ---
     }
 });
 
