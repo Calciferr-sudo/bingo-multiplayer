@@ -458,6 +458,13 @@ socket.on('gameError', (message) => {
         lobbyStatusElement.innerText = message;
         createGameBtn.disabled = false;
         joinGameBtn.disabled = false;
+
+        // NEW: If the error is about a pending rematch request, re-enable reset button
+        if (message.includes("A new match request is already pending.")) {
+            resetGameBtn.disabled = false; // Allow user to try requesting again
+            startGameBtn.disabled = true; // Still disabled after a win
+            gameStatusElement.innerText = "Rematch request already pending. Please wait or try again.";
+        }
     }
 });
 
@@ -473,7 +480,7 @@ socket.on('userLeft', (username) => {
 
 // Listener for new match request from opponent
 socket.on('newMatchRequested', (requesterUsername) => {
-    rematchModalMessage.innerText = `${requatchUsername} wants to play another match!`;
+    rematchModalMessage.innerText = `${requesterUsername} wants to play another match!`;
     rematchModal.style.display = 'flex';
     gameStatusElement.innerText = "Opponent requested a rematch!";
     // Ensure game buttons are disabled while rematch request is pending
