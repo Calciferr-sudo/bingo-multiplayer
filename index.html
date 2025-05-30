@@ -424,6 +424,21 @@
         #game-screen {
             display: none;
         }
+        /* Style for cells that form a completed Bingo line */
+    .cell.bingo-line-strike {
+    background-color: #fdd835; /* A yellowish color to highlight the line */
+    box-shadow: 0 0 10px rgba(253, 216, 53, 0.8); /* Optional: add a subtle glow */
+    /* You can experiment with other styles, e.g., a bolder border or a subtle animation */
+    /* If you want a literal line through the text, it's more complex with current structure,
+       but background change is very effective and clear. */
+    }
+
+/* Ensure marked cells still look distinct, even if they are part of a struck line */
+/* This combines the marked color with the line-strike color */
+    .cell.marked.bingo-line-strike {
+    background-color: #ffb300; /* A slightly darker orange/yellow when both marked and struck */
+    box-shadow: 0 0 12px rgba(255, 179, 0, 1); /* Enhanced glow for marked+struck */
+    }
 
         /* Game Notifications Container */
         .game-notifications {

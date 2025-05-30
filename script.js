@@ -1,10 +1,10 @@
 // Establish Socket.IO connection to the backend server
-const socket = io('https://bingo-backend-1-4ajn.onrender.com');
+const socket = io('https://bingo-backend-1-4ajn.onrender.com'); // <--- !!! ENSURE THIS MATCHES YOUR DEPLOYED BACKEND URL !!!
 
 // --- DOM Elements ---
 // Lobby Screen Elements
 const lobbyScreen = document.getElementById('lobby-screen');
-const usernameInput = document.getElementById('username-input'); // NEW
+const usernameInput = document.getElementById('username-input');
 const gameIdInput = document.getElementById('game-id-input');
 const createGameBtn = document.getElementById('create-game-btn');
 const joinGameBtn = document.getElementById('join-game-btn');
@@ -42,6 +42,9 @@ let currentUsername = "Player"; // Stores the chosen username for this player
 let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or 2)
 let currentGameId = null; // Stores the ID of the game room the player is in
 
+// NEW: Set to keep track of lines that have been visually struck
+let struckLineIndices = new Set(); 
+
 // --- UI Switching Functions ---
 function showLobbyScreen() {
     lobbyScreen.style.display = 'flex'; // Use flex to center content
@@ -54,6 +57,9 @@ function showLobbyScreen() {
     gameStatusElement.innerText = '';
     chatMessagesElement.innerHTML = '';
     updatePlayerIdDisplay(); // Update display for lobby
+    // Re-enable lobby buttons
+    createGameBtn.disabled = false;
+    joinGameBtn.disabled = false;
 }
 
 function showGameScreen() {
@@ -83,6 +89,8 @@ function updatePlayerIdDisplay() {
 function showMessageModal(title, message) {
     modalTitle.innerText = title;
     modalMessage.innerText = message;
+    modalOkBtn.removeEventListener('click', hideMessageModal); // Remove previous listener to prevent duplicates
+    modalOkBtn.addEventListener('click', hideMessageModal); // Add new listener
     messageModal.style.display = 'flex'; // Show the modal
 }
 
@@ -90,9 +98,10 @@ function showMessageModal(title, message) {
  * Hides the custom message box modal.
  */
 function hideMessageModal() {
+    modalMessage.innerText = ''; // Clear message for next time
     messageModal.style.display = 'none'; // Hide the modal
 }
-modalOkBtn.addEventListener('click', hideMessageModal); // Ensure this listener is always active
+
 
 // Temporary game notifications
 let notificationTimeout;
@@ -107,7 +116,7 @@ function displayGameNotification(message, type = 'info', duration = 3000) {
         clearTimeout(notificationTimeout);
         gameNotificationsElement.classList.remove('show');
         // Force reflow to restart animation if a new notification comes quickly
-        void gameNotificationsElement.offsetWidth;
+        void gameNotificationsElement.offsetWidth; // Trigger reflow
     }
 
     gameNotificationsElement.innerText = message;
@@ -127,6 +136,7 @@ function displayGameNotification(message, type = 'info', duration = 3000) {
 function initializeBoard() {
     numbers = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
     marked.fill(false);
+    struckLineIndices.clear(); // Clear previously struck lines
     boardElement.innerHTML = ''; // This clears existing cells
 
     numbers.forEach((num, idx) => {
@@ -177,7 +187,7 @@ function disableBoardClicks() {
 }
 
 /**
- * Checks for Bingo lines (rows, columns, diagonals).
+ * Checks for Bingo lines (rows, columns, diagonals) and applies visual strike.
  * Returns the count of completed Bingo lines.
  * @returns {number} - The total count of completed lines.
  */
@@ -185,17 +195,36 @@ function checkBingo() {
     const isCellMarked = (i) => marked[i];
 
     const allPossibleLines = [
+        // Rows
         [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
+        // Columns
         [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
-        [0, 6, 12, 18, 24], [4, 8, 12, 16, 20]
+        // Diagonals
+        [0, 6, 12, 18, 24], // Top-left to bottom-right
+        [4, 8, 12, 16, 20]  // Top-right to bottom-left
     ];
 
     let bingoLineCount = 0;
+
     allPossibleLines.forEach(lineIndices => {
         if (lineIndices.every(isCellMarked)) {
             bingoLineCount++;
+            // Convert lineIndices array to a string for easy Set comparison
+            const lineKey = JSON.stringify(lineIndices);
+
+            // If this line hasn't been struck yet, add it to the set and apply visual effect
+            if (!struckLineIndices.has(lineKey)) {
+                struckLineIndices.add(lineKey);
+                lineIndices.forEach(idx => {
+                    const cellElement = document.querySelectorAll('.cell')[idx];
+                    if (cellElement) {
+                        cellElement.classList.add('bingo-line-strike');
+                    }
+                });
+            }
         }
     });
+
     return bingoLineCount;
 }
 
@@ -262,7 +291,7 @@ startGameBtn.addEventListener('click', () => {
 });
 
 resetGameBtn.addEventListener('click', () => {
-    if (gameStarted && currentGameId) { // Ensure in a game
+    if (currentGameId) { // Allow reset if in a game, regardless of gameStarted state
         console.log(`Attempting to reset game in room ${currentGameId}...`);
         socket.emit('resetGame');
         resetGameBtn.disabled = true;
@@ -337,14 +366,12 @@ socket.on('gameError', (message) => {
 
 // Listen for user joined notification (now receives username)
 socket.on('userJoined', (username) => {
-    // No need to check if self, backend handles this by emitting only to others (socket.to)
     displayGameNotification(`${username} joined!`);
     console.log(`${username} joined the game.`);
 });
 
 // Listen for user left notification (now receives username)
 socket.on('userLeft', (username) => {
-    // No need to check if self
     displayGameNotification(`${username} left the game.`);
     console.log(`${username} left the game.`);
 });
@@ -385,25 +412,19 @@ socket.on('gameState', (state) => {
 
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
 
-    // console.log(`Updated client state for Game ${currentGameId}: gameStarted=${gameStarted}, isMyTurn=${isMyTurn}, players.length=${state.players.length}`);
-
     if (!gameStarted) {
         if (state.players.length >= 2) {
             startGameBtn.disabled = false;
             gameStatusElement.innerText = "Two players ready! Click 'Start Game' to begin.";
-            // console.log('UI Update: Start Game button ENABLED (2+ players, game not started)');
         } else {
             startGameBtn.disabled = true;
             gameStatusElement.innerText = "Waiting for another player to join...";
-            // console.log('UI Update: Start Game button DISABLED (<2 players, game not started)');
         }
-        resetGameBtn.disabled = true;
+        resetGameBtn.disabled = true; // Reset button disabled when game not started
         disableBoardClicks();
-        // console.log('UI Update: Reset Game button DISABLED, board clicks DISABLED');
     } else { // If game IS started
         startGameBtn.disabled = true;
-        resetGameBtn.disabled = false;
-        // console.log('UI Update: Start Game button DISABLED, Reset Game button ENABLED');
+        resetGameBtn.disabled = false; // Reset button enabled when game is in progress or won
         
         // Find the username of the player whose turn it is
         const turnPlayer = state.players.find(p => p.id === state.currentTurnPlayerId);
@@ -412,27 +433,30 @@ socket.on('gameState', (state) => {
         if (isMyTurn) {
             gameStatusElement.innerText = "Your Turn! Click a number to call it.";
             enableBoardClicks();
-            // console.log('UI Update: It is your turn, board clicks ENABLED');
         } else {
             gameStatusElement.innerText = `Waiting for ${turnPlayerName} to call a number.`;
             disableBoardClicks();
-            // console.log('UI Update: Not your turn, board clicks DISABLED');
         }
     }
 
     // Update board based on globally marked numbers
+    // First, remove all marked and bingo-line-strike classes
     document.querySelectorAll('.cell').forEach(cell => {
         cell.classList.remove('marked');
+        cell.classList.remove('bingo-line-strike'); // Ensure line strike is removed
     });
-
+    // Then, re-apply marked classes
     state.markedNumbers.forEach(num => {
         const idx = numbers.indexOf(num);
         if (idx > -1) {
-            marked[idx] = true;
+            marked[idx] = true; // Update local marked state
             document.querySelectorAll('.cell')[idx].classList.add('marked');
         }
     });
-    // console.log('UI Update: Board marked based on server state.');
+    // After updating marked numbers, check for Bingo lines to apply strikes
+    // We call checkBingo here to ensure lines are struck based on the *latest* marked numbers from the server.
+    // This is important for clients who might join mid-game or if their marked state gets out of sync.
+    checkBingo(); 
 });
 
 // Listen for a number being marked (called) by any player
@@ -442,9 +466,8 @@ socket.on('numberMarked', (num) => {
     if (idx > -1 && !marked[idx]) {
         marked[idx] = true;
         document.querySelectorAll('.cell')[idx].classList.add('marked');
-        // gameStatusElement.innerText = `Number ${num} was called!`; // This is often overwritten by gameState.
 
-        const currentBingoLineCount = checkBingo();
+        const currentBingoLineCount = checkBingo(); // Check for Bingo lines and apply strikes
         if (gameStarted && currentBingoLineCount === 5) {
             console.log(`Player ${currentUsername} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
@@ -471,7 +494,7 @@ socket.on('playerDeclaredWin', (winningUsername) => {
 // Listen for game reset event from server
 socket.on('gameReset', () => {
     console.log('Game reset event received from server.');
-    initializeBoard();
+    initializeBoard(); // This now also clears struckLineIndices and removes strike classes
     gameStarted = false;
     isMyTurn = false;
     startGameBtn.disabled = false;
@@ -483,7 +506,7 @@ socket.on('gameReset', () => {
 // Listen for incoming chat messages (senderId is now username)
 socket.on('message', (data) => {
     // Check if the sender is the current player by username
-    const isSelf = data.senderId === currentUsername;
+    const isSelf = (data.senderId === currentUsername) || (data.senderId === `Player-${currentPlayerId.substring(0, 4)}`); // Handle potential temporary ID
     addChatMessage(data.senderId, data.message, isSelf);
 });
 
@@ -515,6 +538,21 @@ socket.on('connect_error', (error) => {
 // Buttons in game screen are controlled by gameState updates.
 // Set a default username when the script loads or on connect if empty
 document.addEventListener('DOMContentLoaded', () => {
-    usernameInput.value = `Player-${socket.id ? socket.id.substring(0, 4) : '...'}`;
+    // Check if username is already in local storage (optional, but good for persistence)
+    const storedUsername = localStorage.getItem('bingoUsername');
+    if (storedUsername) {
+        usernameInput.value = storedUsername;
+        currentUsername = storedUsername;
+    } else {
+        currentUsername = `Player-${Math.random().toString(36).substring(2, 6).toUpperCase()}`; // More random default
+        usernameInput.value = currentUsername;
+    }
     updatePlayerIdDisplay(); // Initialize display
+});
+
+// Save username to local storage on input change
+usernameInput.addEventListener('input', () => {
+    localStorage.setItem('bingoUsername', usernameInput.value.trim());
+    currentUsername = usernameInput.value.trim();
+    updatePlayerIdDisplay();
 });
