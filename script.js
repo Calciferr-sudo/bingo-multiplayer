@@ -66,7 +66,8 @@ let currentPlayerId = null; // Stores the unique socket ID assigned to this play
 let currentUsername = "Player"; // Stores the chosen username for this player
 let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or 2)
 let currentGameId = null; // Stores the ID of the game room the player is in
-let currentWinnerId = null; // NEW: Stores the ID of the winning player, or null if no winner yet
+let currentWinnerId = null; // Stores the ID of the winning player, or null if no winner yet
+
 
 // Set to keep track of lines that have been visually struck
 let struckLineIndices = new Set();
@@ -472,7 +473,7 @@ socket.on('userLeft', (username) => {
 
 // Listener for new match request from opponent
 socket.on('newMatchRequested', (requesterUsername) => {
-    rematchModalMessage.innerText = `${requesterUsername} wants to play another match!`;
+    rematchModalMessage.innerText = `${requatchUsername} wants to play another match!`;
     rematchModal.style.display = 'flex';
     gameStatusElement.innerText = "Opponent requested a rematch!";
     // Ensure game buttons are disabled while rematch request is pending
@@ -529,7 +530,7 @@ socket.on('gameState', (state) => {
     // Update local game state variables
     gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
-    currentWinnerId = state.winnerId; // NEW: Update global winner ID from server state
+    currentWinnerId = state.winnerId; // Update global winner ID from server state
 
     // --- IMPORTANT: Handle button states and status messages based on current game state ---
     if (currentWinnerId) { // Game has ended with a winner
@@ -599,7 +600,7 @@ socket.on('numberMarked', (num) => {
 
         const currentBingoLineCount = checkBingo();
         // Only emit 'declareWin' if the game is still considered started and no winner is known yet
-        if (gameStarted && currentBingoLineCount >= 5 && !currentWinnerId) { // NEW: Check currentWinnerId
+        if (gameStarted && currentBingoLineCount >= 5 && !currentWinnerId) {
             console.log(`Player ${currentUsername} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
         }
@@ -628,7 +629,7 @@ socket.on('gameReset', () => {
     initializeBoard(); // This now also clears struckLineIndices and removes strike classes
     gameStarted = false;
     isMyTurn = false;
-    currentWinnerId = null; // NEW: Reset winner ID on game reset
+    currentWinnerId = null; // Reset winner ID on game reset
     // Button states will be handled by the gameState update
     gameStatusElement.innerText = "Game has been reset. Waiting for players to ready up or another player to join.";
     showMessageModal("Game Reset", "The game has been reset. A new round can begin!");
@@ -649,7 +650,7 @@ socket.on('disconnect', () => {
     showLobbyScreen();
     currentGameId = null;
     currentPlayerNumber = null;
-    currentWinnerId = null; // NEW: Reset on disconnect
+    currentWinnerId = null; // Reset on disconnect
 });
 
 socket.on('connect_error', (error) => {
@@ -659,7 +660,7 @@ socket.on('connect_error', (error) => {
     showLobbyScreen();
     currentGameId = null;
     currentPlayerNumber = null;
-    currentWinnerId = null; // NEW: Reset on connection error
+    currentWinnerId = null; // Reset on connection error
 });
 
 document.addEventListener('DOMContentLoaded', () => {
