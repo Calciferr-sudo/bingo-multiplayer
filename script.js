@@ -41,6 +41,11 @@ function showLobbyScreen() {
     gameScreen.style.display = 'none';
     lobbyStatusElement.innerText = "Enter a Game ID or create a new game.";
     gameIdInput.value = ''; // Clear input
+    // Also clear any game-specific info when returning to lobby
+    currentGameId = null;
+    currentRoomIdSpan.innerText = '';
+    gameStatusElement.innerText = '';
+    chatMessagesElement.innerHTML = '';
 }
 
 function showGameScreen() {
@@ -66,6 +71,8 @@ function showMessageModal(title, message) {
  * Hides the custom message box modal.
  */
 function hideMessageModal() {
+    modalOkBtn.removeEventListener('click', hideMessageModal); // Remove previous listener to prevent duplicates
+    modalOkBtn.addEventListener('click', hideMessageModal); // Add new listener
     messageModal.style.display = 'none'; // Hide the modal
 }
 
@@ -87,8 +94,9 @@ function initializeBoard() {
         cell.addEventListener('click', () => {
             if (gameStarted && isMyTurn && !marked[idx]) {
                 const calledNumber = parseInt(cell.innerText);
-                console.log(`Calling number: ${calledNumber} in game ${currentGameId}`);
-                socket.emit('markNumber', currentGameId, calledNumber); // Emit with gameId
+                console.log(`Calling number: ${calledNumber} in game ${currentGameId}...`);
+                // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
+                socket.emit('markNumber', calledNumber);
                 disableBoardClicks(); // Disable clicks after calling a number
             } else if (!gameStarted) {
                 showMessageModal("Game Not Started", "The game has not started yet. Click 'Start Game' to begin.");
@@ -189,7 +197,8 @@ joinGameBtn.addEventListener('click', () => {
 startGameBtn.addEventListener('click', () => {
     if (!gameStarted && currentGameId) { // Ensure in a game
         console.log(`Attempting to start game in room ${currentGameId}...`);
-        socket.emit('startGame'); // Backend knows which game this player is in
+        // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
+        socket.emit('startGame');
         startGameBtn.disabled = true;
         gameStatusElement.innerText = "Requesting game start...";
     }
@@ -198,7 +207,8 @@ startGameBtn.addEventListener('click', () => {
 resetGameBtn.addEventListener('click', () => {
     if (gameStarted && currentGameId) { // Ensure in a game
         console.log(`Attempting to reset game in room ${currentGameId}...`);
-        socket.emit('resetGame'); // Backend knows which game this player is in
+        // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
+        socket.emit('resetGame');
         resetGameBtn.disabled = true;
         gameStatusElement.innerText = "Requesting game reset...";
     }
@@ -207,7 +217,8 @@ resetGameBtn.addEventListener('click', () => {
 sendChatBtn.addEventListener('click', () => {
     const message = chatInput.value.trim();
     if (message && currentGameId) { // Ensure in a game
-        socket.emit('sendMessage', currentGameId, message); // Emit with gameId
+        // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
+        socket.emit('sendMessage', message);
         chatInput.value = '';
     } else if (!currentGameId) {
         showMessageModal("Chat Error", "You must join a game to send messages.");
@@ -339,7 +350,8 @@ socket.on('numberMarked', (num) => {
         const currentBingoLineCount = checkBingo();
         if (gameStarted && currentBingoLineCount === 5) {
             console.log(`Player ${currentPlayerId} achieved BINGO! Emitting 'declareWin'.`);
-            socket.emit('declareWin'); // Backend handles which game it's for
+            // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
+            socket.emit('declareWin');
         }
     }
 });
