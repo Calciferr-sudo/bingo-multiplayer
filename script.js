@@ -449,17 +449,17 @@ socket.on('newMatchRequested', (requesterUsername) => {
 socket.on('newMatchAccepted', () => {
     displayGameNotification("Rematch accepted! Starting new game.", 'info', 3000);
     rematchModal.style.display = 'none'; // Hide modal if it was showing
-    // The gameState update will handle board reset and button states
+    // Button states will be handled by the subsequent gameState update after server reset
 });
 
 // NEW: Listener when new match is declined
 socket.on('newMatchDeclined', (declinerUsername) => {
     displayGameNotification(`${declinerUsername} declined the rematch.`, 'error', 3000);
     rematchModal.style.display = 'none'; // Hide modal if it was showing
-    // Revert buttons to post-win state
-    startGameBtn.disabled = false; // Can start a new game if desired
-    resetGameBtn.disabled = false; // Can request again
-    gameStatusElement.innerText = "Rematch declined. Click 'Start Game' or 'Reset Game'.";
+    // After decline, revert to post-win state (Start Game disabled, Reset Game enabled)
+    startGameBtn.disabled = true; // Keep Start Game disabled after decline
+    resetGameBtn.disabled = false; // Allow requesting again
+    gameStatusElement.innerText = "Rematch declined. Click 'Reset Game' to send another request.";
 });
 
 
@@ -478,50 +478,41 @@ socket.on('gameState', (state) => {
         return;
     }
 
-    gameStarted = state.gameStarted;
-
+    // Update player info (username, number)
     const selfPlayer = state.players.find(p => p.id === currentPlayerId);
     if (selfPlayer) {
         currentUsername = selfPlayer.username;
         currentPlayerNumber = selfPlayer.playerNumber;
         updatePlayerIdDisplay();
     } else {
-        currentUsername = `Disconnected Player`;
+        currentUsername = `Disconnected Player`; // Should ideally not happen if playerCurrentGameId is correct
         currentPlayerNumber = null;
         updatePlayerIdDisplay();
         console.error("Current player not found in gameState players list.");
     }
 
+    // Update local game state variables
+    gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
 
-    // Handle button states based on game state and pending requests
-    if (!gameStarted) {
-        if (state.winnerId) { // Game has ended with a winner
-            startGameBtn.disabled = false; // Allow starting a new game (if opponent is present)
-            resetGameBtn.disabled = false; // Allow requesting a rematch
-            gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === state.winnerId)?.username || 'Someone'} won.`;
-        } else if (state.pendingNewMatchRequest) { // A rematch request is pending
-            startGameBtn.disabled = true; // Cannot start while request is pending
-            resetGameBtn.disabled = true; // Cannot request again while pending
-            if (state.pendingNewMatchRequest.requesterId === currentPlayerId) {
-                gameStatusElement.innerText = "Waiting for opponent's response to rematch request...";
-            } else {
-                gameStatusElement.innerText = `${state.pendingNewMatchRequest.requesterUsername} wants to play again!`;
-            }
-        }
-        else if (state.players.length >= 2) { // Two players, game not started, no winner, no pending request
-            startGameBtn.disabled = false;
-            resetGameBtn.disabled = true;
-            gameStatusElement.innerText = "Two players ready! Click 'Start Game' to begin.";
-        } else { // Less than two players, game not started
-            startGameBtn.disabled = true;
-            resetGameBtn.disabled = true;
-            gameStatusElement.innerText = "Waiting for another player to join...";
+    // --- IMPORTANT: Handle button states and status messages based on current game state ---
+    if (state.winnerId) { // Game has ended with a winner
+        startGameBtn.disabled = true; // NEW: Disable Start Game button after a win
+        resetGameBtn.disabled = false; // Enable Reset button for rematch
+        gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === state.winnerId)?.username || 'Someone'} won. Click 'Reset Game' for a rematch.`;
+        disableBoardClicks(); // Ensure board is disabled
+    } else if (state.pendingNewMatchRequest) { // A rematch request is pending
+        startGameBtn.disabled = true;
+        resetGameBtn.disabled = true; // Both disabled during negotiation
+        if (state.pendingNewMatchRequest.requesterId === currentPlayerId) {
+            gameStatusElement.innerText = "Waiting for opponent's response to rematch request...";
+        } else {
+            gameStatusElement.innerText = `${state.pendingNewMatchRequest.requesterUsername} wants to play again! Please respond in the modal.`;
         }
         disableBoardClicks();
-    } else { // If game IS started
+    } else if (gameStarted) { // Game is actively in progress (no winner, no pending request)
         startGameBtn.disabled = true;
-        resetGameBtn.disabled = true; // Reset button disabled during active game
+        resetGameBtn.disabled = true; // Both disabled during active game
         
         const turnPlayer = state.players.find(p => p.id === state.currentTurnPlayerId);
         const turnPlayerName = turnPlayer ? turnPlayer.username : "Unknown Player";
@@ -533,6 +524,17 @@ socket.on('gameState', (state) => {
             gameStatusElement.innerText = `Waiting for ${turnPlayerName} to call a number.`;
             disableBoardClicks();
         }
+    } else { // Game is not started (e.g., lobby state, after full reset, or initial join, or after a decline)
+        if (state.players.length >= 2) {
+            startGameBtn.disabled = false; // Enable if 2 players are present and no game is started/won/pending
+            resetGameBtn.disabled = true; // Reset is only for post-win/rematch scenario now
+            gameStatusElement.innerText = "Two players ready! Click 'Start Game' to begin.";
+        } else {
+            startGameBtn.disabled = true;
+            resetGameBtn.disabled = true;
+            gameStatusElement.innerText = "Waiting for another player to join...";
+        }
+        disableBoardClicks();
     }
 
     // Update board based on globally marked numbers
@@ -572,8 +574,7 @@ socket.on('playerDeclaredWin', (data) => {
     disableBoardClicks();
     gameStarted = false; // Game is no longer started
     
-    // Button states will be handled by the gameState update
-    // from the server, which now includes winnerId.
+    // The gameState update will now correctly set button states based on winnerId.
 
     if (data.winnerId === currentPlayerId) {
         showMessageModal("Congratulations!", "BINGO! You won the game!");
@@ -589,8 +590,9 @@ socket.on('gameReset', () => {
     initializeBoard(); // This now also clears struckLineIndices and removes strike classes
     gameStarted = false; // Game is no longer started
     isMyTurn = false;
-    // Button states will be handled by the gameState update
-    gameStatusElement.innerText = "Game has been reset. Click 'Start Game' to begin a new round.";
+    startGameBtn.disabled = true; // NEW: Ensure disabled after a reset, until conditions are met for starting by gameState
+    resetGameBtn.disabled = true; // Reset this temporarily as gameState will re-evaluate
+    gameStatusElement.innerText = "Game has been reset. Waiting for players to ready up or another player to join.";
     showMessageModal("Game Reset", "The game has been reset. A new round can begin!");
 });
 
