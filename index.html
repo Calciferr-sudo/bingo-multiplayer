@@ -77,12 +77,12 @@
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
         }
 
-        .btn-danger { /* NEW: Style for exit button */
+        .btn-danger { /* Style for exit button */
             background-color: #e74c3c; /* Red color */
             color: white;
         }
 
-        .btn-danger:hover { /* NEW: Hover for exit button */
+        .btn-danger:hover { /* Hover for exit button */
             background-color: #c0392b;
             transform: translateY(-2px);
             box-shadow: 0 6px 15px rgba(0,0,0,0.15);
@@ -172,6 +172,31 @@
             height: 20px;
             fill: #34495e; /* Dark grey icon */
         }
+
+        /* BINGO Tracker Styles */
+        #bingo-tracker {
+            display: flex;
+            justify-content: center;
+            gap: 15px; /* Space between letters */
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+
+        .bingo-letter {
+            font-size: 2.5rem; /* Large letters */
+            font-weight: 700;
+            color: #bdc3c7; /* Light grey by default */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.3s ease-out;
+            transform: scale(1);
+        }
+
+        .bingo-letter.marked {
+            color: #27ae60; /* Vibrant green when marked */
+            transform: scale(1.1); /* Slightly pop out */
+            text-shadow: 0 0 10px rgba(39, 174, 96, 0.5); /* Green glow */
+        }
+
 
         #board {
             display: grid;
@@ -308,7 +333,7 @@
             background-color: #27ad60;
         }
 
-        /* Modal Styles - No changes needed, they are already good */
+        /* Modal Styles */
         .message-modal {
             display: none;
             position: fixed;
@@ -590,6 +615,10 @@
                 width: 18px;
                 height: 18px;
             }
+            .bingo-letter {
+                font-size: 2rem;
+                gap: 10px;
+            }
         }
 
         @media (max-width: 480px) {
@@ -629,6 +658,10 @@
                 width: clamp(250px, 90vw, 350px);
                 padding: 10px 15px;
                 font-size: 0.9rem;
+            }
+            .bingo-letter {
+                font-size: 1.8rem;
+                gap: 8px;
             }
         }
     </style>
@@ -686,7 +719,16 @@
                 <div class="controls">
                     <button id="start-game-btn" class="btn btn-primary">Start Game</button>
                     <button id="reset-game-btn" class="btn btn-secondary">Reset Game</button>
-                    <button id="exit-room-btn" class="btn btn-danger">Exit Room</button> </div>
+                    <button id="exit-room-btn" class="btn btn-danger">Exit Room</button>
+                </div>
+
+                <div id="bingo-tracker">
+                    <span id="bingo-b" class="bingo-letter">B</span>
+                    <span id="bingo-i" class="bingo-letter">I</span>
+                    <span id="bingo-n" class="bingo-letter">N</span>
+                    <span id="bingo-g" class="bingo-letter">G</span>
+                    <span id="bingo-o" class="bingo-letter">O</span>
+                </div>
 
                 <div id="board"></div>
             </div>

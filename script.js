@@ -21,7 +21,7 @@ const copyGameIdBtn = document.getElementById('copy-game-id-btn');
 const gameStatusElement = document.getElementById('game-status');
 const startGameBtn = document.getElementById('start-game-btn');
 const resetGameBtn = document.getElementById('reset-game-btn');
-const exitRoomBtn = document.getElementById('exit-room-btn'); // NEW: Exit Room button
+const exitRoomBtn = document.getElementById('exit-room-btn');
 const chatMessagesElement = document.getElementById('chat-messages');
 const chatInput = document.getElementById('chat-input');
 const sendChatBtn = document.getElementById('send-chat-btn');
@@ -52,6 +52,9 @@ document.body.appendChild(rematchModal);
 const rematchModalMessage = document.getElementById('rematch-modal-message');
 const rematchAcceptBtn = document.getElementById('rematch-accept-btn');
 const rematchDeclineBtn = document.getElementById('rematch-decline-btn');
+
+// NEW: BINGO Tracker Elements
+const bingoLetters = ['B', 'I', 'N', 'G', 'O'].map(letter => document.getElementById(`bingo-${letter.toLowerCase()}`));
 
 
 // --- Game State Variables ---
@@ -162,6 +165,13 @@ function initializeBoard() {
     struckLineIndices.clear(); // Clear previously struck lines
     boardElement.innerHTML = ''; // This clears existing cells
 
+    // NEW: Reset BINGO tracker letters
+    bingoLetters.forEach(letterElement => {
+        if (letterElement) {
+            letterElement.classList.remove('marked');
+        }
+    });
+
     numbers.forEach((num, idx) => {
         const cell = document.createElement('div');
         cell.classList.add('cell');
@@ -248,6 +258,17 @@ function checkBingo() {
                         cellElement.classList.add('bingo-line-strike');
                     }
                 });
+            }
+        }
+    });
+
+    // NEW: Update BINGO tracker letters based on bingoLineCount
+    bingoLetters.forEach((letterElement, index) => {
+        if (letterElement) {
+            if (index < bingoLineCount) {
+                letterElement.classList.add('marked');
+            } else {
+                letterElement.classList.remove('marked');
             }
         }
     });
@@ -351,7 +372,7 @@ resetGameBtn.addEventListener('click', () => {
     }
 });
 
-// NEW: Exit Room button listener
+// Exit Room button listener
 exitRoomBtn.addEventListener('click', () => {
     if (currentGameId) {
         console.log(`Player ${currentUsername} leaving room ${currentGameId}...`);
@@ -601,7 +622,7 @@ socket.on('playerDeclaredWin', (data) => {
 socket.on('gameReset', () => {
     console.log('Game reset event received from server.');
     initializeBoard(); // This now also clears struckLineIndices and removes strike classes
-    gameStarted = false; // Game is no longer started
+    gameStarted = false;
     isMyTurn = false;
     // Button states will be handled by the gameState update
     gameStatusElement.innerText = "Game has been reset. Waiting for players to ready up or another player to join.";
