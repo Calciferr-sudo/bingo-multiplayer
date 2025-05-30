@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Bingo Multiplayer</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap'); /* Added 700 for bolder text */
 
         * {
             box-sizing: border-box;
@@ -15,7 +15,8 @@
             margin: 0;
             padding: 0;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to right, #f8f9fa, #e0eafc);
+            background: linear-gradient(to right, #f8f9fa, #e0eafc); /* Light gradient background */
+            background-image: url('data:image/svg+xml,%3Csvg width="6" height="6" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.1" fill-rule="evenodd"%3E%3Cpath d="M5 0h1L0 6V5zM6 5v1H5z"/%3E%3C/g%3E%3C/svg%3E'); /* Subtle diagonal line pattern */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -26,10 +27,11 @@
 
         h1 {
             color: #333;
-            font-size: 2.5rem;
-            margin-bottom: 20px;
+            font-size: 2.8rem; /* Slightly larger */
+            margin-bottom: 25px; /* Adjusted margin */
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
             text-align: center;
+            letter-spacing: 1px; /* Subtle letter spacing */
         }
 
         h2 {
@@ -44,8 +46,9 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin: 5px; /* Added margin for spacing */
-            border: none; /* Reset border */
+            margin: 5px;
+            border: none;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Consistent button shadow */
         }
 
         .btn-primary {
@@ -55,6 +58,8 @@
 
         .btn-primary:hover {
             background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .btn-secondary {
@@ -64,11 +69,15 @@
 
         .btn-secondary:hover {
             background-color: #5a6268;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
         .btn:disabled {
             background-color: #cccccc;
             cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
         }
 
         /* Container for the whole game */
@@ -79,7 +88,7 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.15);
             text-align: center;
             margin-bottom: 20px;
-            width: clamp(300px, 90vw, 700px); /* Responsive width */
+            width: clamp(300px, 90vw, 700px);
             max-width: 700px;
         }
 
@@ -89,10 +98,10 @@
             grid-template-rows: repeat(5, 70px);
             gap: 10px;
             padding: 20px;
-            background: #f0f2f5; /* Lighter background for board area */
+            background: #f0f2f5;
             border-radius: 12px;
-            box-shadow: inset 0 0 8px rgba(0,0,0,0.05); /* Inner shadow */
-            margin: 20px auto; /* Center board */
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.05);
+            margin: 20px auto;
             width: fit-content;
         }
 
@@ -101,7 +110,7 @@
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             text-align: center;
-            line-height: 70px; /* Center text vertically */
+            line-height: 70px;
             font-size: 1.8rem;
             font-weight: 600;
             cursor: pointer;
@@ -115,10 +124,10 @@
         }
 
         .cell.marked {
-            background-color: #28a745; /* Green for marked */
+            background-color: #28a745;
             color: white;
             border-color: #218838;
-            pointer-events: none; /* Not clickable after marked */
+            pointer-events: none;
             box-shadow: 0 4px 8px rgba(40,167,69,0.3);
         }
 
@@ -148,7 +157,7 @@
             padding: 20px;
             border-radius: 16px;
             box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-            width: clamp(300px, 90vw, 700px); /* Responsive width */
+            width: clamp(300px, 90vw, 700px);
             max-width: 700px;
             margin-top: 20px;
         }
@@ -166,7 +175,7 @@
         .chat-message {
             margin-bottom: 5px;
             line-height: 1.4;
-            word-wrap: break-word; /* Ensure long words wrap */
+            word-wrap: break-word;
         }
 
         .chat-input-group {
@@ -198,17 +207,17 @@
 
         /* Modal Styles */
         .message-modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.6); /* Black w/ opacity */
-            justify-content: center; /* Center horizontally */
-            align-items: center; /* Center vertically */
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
         }
 
         .message-modal-content {
@@ -255,7 +264,7 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Lobby Screen Styles */
+        /* --- Lobby Screen Specific Styles --- */
         #lobby-screen {
             background: white;
             padding: 40px;
@@ -264,41 +273,128 @@
             text-align: center;
             width: clamp(300px, 90vw, 500px);
             max-width: 500px;
-            display: flex; /* Flexbox for centering content */
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 20px; /* Space between sections */
+            position: relative; /* For potential background elements later */
+            overflow: hidden; /* Ensure nothing spills out of rounded corners */
         }
 
-        #lobby-screen h2 {
-            margin-bottom: 25px;
-            font-size: 2rem;
+        .lobby-title {
+            margin-bottom: 10px; /* Reduced margin */
+            font-size: 2.2rem; /* Slightly larger */
             color: #007bff;
+            font-weight: 700; /* Bolder */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .lobby-tagline {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .lobby-input-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .input-label {
+            font-size: 1.1rem;
+            color: #444;
+            margin-bottom: 5px;
+            font-weight: 600;
         }
 
         #game-id-input {
-            width: calc(100% - 20px);
-            padding: 12px 15px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-size: 1rem;
+            width: calc(100% - 40px); /* Account for padding */
+            padding: 14px 20px; /* More padding */
+            border: 2px solid #ccc; /* Slightly bolder border */
+            border-radius: 10px; /* More rounded corners */
+            font-size: 1.1rem; /* Larger font */
             text-align: center;
-            text-transform: uppercase; /* Game IDs are uppercase */
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        #lobby-status {
-            margin-top: 15px;
-            font-size: 1.1rem;
-            color: #666;
-            min-height: 25px; /* Prevent jump when message appears */
+        #game-id-input:focus {
+            outline: none;
+            border-color: #007bff; /* Highlight on focus */
+            box-shadow: 0 0 0 3px rgba(0,123,255,0.2); /* Subtle glow */
         }
 
-        .lobby-buttons {
+        .lobby-action-btn {
+            width: calc(100% - 40px); /* Match input width for consistency */
+            padding: 15px 25px; /* Larger padding for buttons */
+            font-size: 1.1rem; /* Larger font for buttons */
+        }
+
+        .lobby-divider {
+            position: relative;
+            width: 80%;
+            margin: 20px 0;
+            font-size: 1rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lobby-divider::before,
+        .lobby-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background-color: #e0e0e0;
+        }
+
+        .lobby-divider::before {
+            left: 0;
+            transform: translateY(-50%);
+        }
+
+        .lobby-divider::after {
+            right: 0;
+            transform: translateY(-50%);
+        }
+
+        .lobby-create-section {
+            width: 100%;
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin-top: 20px;
+        }
+
+        .create-btn {
+            background-color: #28a745; /* Use green for create to distinguish */
+        }
+
+        .create-btn:hover {
+            background-color: #218838;
+        }
+
+        .lobby-message {
+            margin-top: 10px; /* Adjusted margin */
+            font-size: 1rem;
+            color: #666;
+            min-height: 25px;
+            font-weight: 500;
+        }
+
+        .player-id-info {
+            font-size: 0.9rem;
+            color: #777;
+            margin-top: 15px; /* Space from status */
+            padding-top: 10px;
+            border-top: 1px dashed #eee; /* Subtle separator */
+            width: 100%;
         }
 
         #current-room-id {
@@ -317,11 +413,11 @@
         /* Responsive adjustments */
         @media (max-width: 768px) {
             h1 {
-                font-size: 2rem;
+                font-size: 2.2rem;
             }
 
-            .game-container, .chat-section {
-                padding: 20px;
+            .game-container, .chat-section, #lobby-screen {
+                padding: 25px; /* Slightly less padding on smaller screens */
             }
 
             #board {
@@ -336,19 +432,34 @@
                 font-size: 1.5rem;
             }
 
-            .btn {
+            .btn, .lobby-action-btn {
                 padding: 10px 20px;
-                font-size: 0.9rem;
+                font-size: 0.95rem;
             }
 
             #chat-messages {
                 height: 150px;
+            }
+
+            .lobby-title {
+                font-size: 1.8rem;
+            }
+
+            .lobby-tagline {
+                font-size: 1rem;
+            }
+
+            #game-id-input, .lobby-action-btn {
+                width: calc(100% - 20px); /* Adjust width */
+                padding: 12px 15px;
+                font-size: 1rem;
             }
         }
 
         @media (max-width: 480px) {
             h1 {
                 font-size: 1.8rem;
+                margin-bottom: 20px;
             }
 
             #board {
@@ -363,13 +474,17 @@
                 font-size: 1.2rem;
             }
 
-            .lobby-buttons {
-                flex-direction: column;
-                gap: 10px;
+            .lobby-title {
+                font-size: 1.5rem;
             }
 
-            .btn {
-                width: 100%;
+            .lobby-tagline {
+                font-size: 0.9rem;
+            }
+
+            .lobby-divider {
+                margin: 15px 0;
+                font-size: 0.9rem;
             }
         }
     </style>
@@ -378,15 +493,25 @@
     <h1>🎉 Bingo Multiplayer 🎉</h1>
 
     <div id="lobby-screen" class="game-container">
-        <h2>Join or Create Game</h2>
-        <h2 style="font-size: 0.7rem;">Max 2 Players Per Room</h2>
-        <input type="text" id="game-id-input" placeholder="Enter Game ID (e.g., ABC123)" maxlength="6" />
-        <div class="lobby-buttons">
-            <button id="create-game-btn" class="btn btn-primary">Create New Game</button>
-            <button id="join-game-btn" class="btn btn-secondary">Join Game</button>
+        <h2 class="lobby-title">Welcome to Bingo Multiplayer!</h2>
+        <p class="lobby-tagline">Join an existing game by ID or create your own to start playing.</p>
+
+        <div class="lobby-input-section">
+            <label for="game-id-input" class="input-label">Enter Game ID:</label>
+            <input type="text" id="game-id-input" placeholder="e.g., ABC123" maxlength="6" />
+            <button id="join-game-btn" class="btn btn-secondary lobby-action-btn">Join Game</button>
         </div>
-        <div id="lobby-status"></div>
-        <span id="player-id-display">Your ID: <span id="player-id">Connecting...</span></span>
+
+        <div class="lobby-divider">OR</div>
+
+        <div class="lobby-create-section">
+            <button id="create-game-btn" class="btn btn-primary lobby-action-btn create-btn">Create New Game</button>
+        </div>
+
+        <div id="lobby-status" class="lobby-message"></div>
+        <div id="player-id-display" class="player-id-info">
+            Your ID: <span id="player-id">Connecting...</span>
+        </div>
     </div>
 
     <div id="game-screen">
