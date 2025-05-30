@@ -410,6 +410,33 @@
             display: none;
         }
 
+        /* New: Game Notifications Container */
+        .game-notifications {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(280px, 80vw, 400px);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            font-size: 1rem;
+            text-align: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-out, visibility 0.3s ease-out, transform 0.3s ease-out;
+            pointer-events: none; /* Allows clicks to pass through */
+        }
+
+        .game-notifications.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-10px); /* Slight upward slide */
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
             h1 {
@@ -521,6 +548,8 @@
                 Game ID: <span id="current-room-id"></span>
             </div>
             <div id="game-status">Waiting for game to start...</div>
+
+            <div id="game-notifications" class="game-notifications"></div>
 
             <div class="controls">
                 <button id="start-game-btn" class="btn btn-primary">Start Game</button>

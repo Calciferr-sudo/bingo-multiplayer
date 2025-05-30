@@ -27,6 +27,10 @@ const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
 const modalOkBtn = document.getElementById('modal-ok-btn');
 
+// NEW: Game Notifications Element
+const gameNotificationsElement = document.getElementById('game-notifications');
+
+
 // --- Game State Variables ---
 let numbers = []; // Array to hold the numbers on the player's board (1-25, shuffled)
 let marked = Array(25).fill(false); // Boolean array to track marked cells
@@ -76,6 +80,32 @@ function hideMessageModal() {
     messageModal.style.display = 'none'; // Hide the modal
 }
 
+// NEW: Temporary game notifications
+let notificationTimeout;
+/**
+ * Displays a temporary notification on the game screen.
+ * @param {string} message - The message to display.
+ * @param {string} type - 'info' (default) or 'error'. (Currently only affects message, not styling)
+ * @param {number} duration - How long the notification should display in ms.
+ */
+function displayGameNotification(message, type = 'info', duration = 3000) {
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+        gameNotificationsElement.classList.remove('show');
+        // Force reflow to restart animation if a new notification comes quickly
+        void gameNotificationsElement.offsetWidth;
+    }
+
+    gameNotificationsElement.innerText = message;
+    gameNotificationsElement.classList.add('show');
+
+    notificationTimeout = setTimeout(() => {
+        gameNotificationsElement.classList.remove('show');
+        notificationTimeout = null;
+    }, duration);
+}
+
+
 /**
  * Initializes or resets the Bingo board.
  * Shuffles numbers, clears marked cells, and updates the DOM.
@@ -95,15 +125,17 @@ function initializeBoard() {
             if (gameStarted && isMyTurn && !marked[idx]) {
                 const calledNumber = parseInt(cell.innerText);
                 console.log(`Calling number: ${calledNumber} in game ${currentGameId}...`);
-                // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
                 socket.emit('markNumber', calledNumber);
                 disableBoardClicks(); // Disable clicks after calling a number
             } else if (!gameStarted) {
-                showMessageModal("Game Not Started", "The game has not started yet. Click 'Start Game' to begin.");
+                // Now using game notification for these
+                displayGameNotification("Game has not started yet.", 'error', 2500);
             } else if (!isMyTurn) {
-                showMessageModal("Not Your Turn", "It's not your turn to call a number.");
+                // Now using game notification for these
+                displayGameNotification("It's not your turn!", 'error', 2500);
             } else if (marked[idx]) {
-                showMessageModal("Already Marked", "This number has already been called.");
+                // Now using game notification for these
+                displayGameNotification("Number already called!", 'error', 2500);
             }
         });
 
@@ -197,7 +229,6 @@ joinGameBtn.addEventListener('click', () => {
 startGameBtn.addEventListener('click', () => {
     if (!gameStarted && currentGameId) { // Ensure in a game
         console.log(`Attempting to start game in room ${currentGameId}...`);
-        // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
         socket.emit('startGame');
         startGameBtn.disabled = true;
         gameStatusElement.innerText = "Requesting game start...";
@@ -207,7 +238,6 @@ startGameBtn.addEventListener('click', () => {
 resetGameBtn.addEventListener('click', () => {
     if (gameStarted && currentGameId) { // Ensure in a game
         console.log(`Attempting to reset game in room ${currentGameId}...`);
-        // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
         socket.emit('resetGame');
         resetGameBtn.disabled = true;
         gameStatusElement.innerText = "Requesting game reset...";
@@ -217,7 +247,6 @@ resetGameBtn.addEventListener('click', () => {
 sendChatBtn.addEventListener('click', () => {
     const message = chatInput.value.trim();
     if (message && currentGameId) { // Ensure in a game
-        // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
         socket.emit('sendMessage', message);
         chatInput.value = '';
     } else if (!currentGameId) {
@@ -261,14 +290,34 @@ socket.on('gameJoined', (gameId) => {
     chatMessagesElement.innerHTML = ''; // Clear chat for new game
 });
 
-// New: Listen for game errors (e.g., ID not found, game started)
+// New: Listen for game errors (e.g., ID not found, game started, etc.)
 socket.on('gameError', (message) => {
     console.error('Game Error:', message);
-    showMessageModal("Game Error", message);
-    lobbyStatusElement.innerText = message; // Update lobby status if applicable
-    // Re-enable join/create buttons if an error occurred during join attempt
-    createGameBtn.disabled = false;
-    joinGameBtn.disabled = false;
+    // Use the new game notification system for common in-game errors
+    if (message === 'It is not your turn.' || message === 'Number already called.') {
+        displayGameNotification(message, 'error', 2500); // Shorter duration for quick feedback
+    } else {
+        // Use modal for other, more critical errors like game not found or room full
+        showMessageModal("Game Error", message);
+        lobbyStatusElement.innerText = message; // Update lobby status if applicable
+        // Re-enable join/create buttons if an error occurred during join attempt
+        createGameBtn.disabled = false;
+        joinGameBtn.disabled = false;
+    }
+});
+
+// NEW: Listen for user joined notification
+socket.on('userJoined', (playerId) => {
+    if (playerId === currentPlayerId) return; // Don't notify self
+    displayGameNotification(`Player ${playerId.substring(0, 5)}... joined!`);
+    console.log(`Player ${playerId.substring(0, 5)}... joined the game.`);
+});
+
+// NEW: Listen for user left notification
+socket.on('userLeft', (playerId) => {
+    if (playerId === currentPlayerId) return; // Don't notify self
+    displayGameNotification(`Player ${playerId.substring(0, 5)}... left the game.`);
+    console.log(`Player ${playerId.substring(0, 5)}... left the game.`);
 });
 
 // Listen for game state updates from the server
@@ -279,7 +328,6 @@ socket.on('gameState', (state) => {
     if (!state || !Array.isArray(state.players) || !Array.isArray(state.markedNumbers) || !state.gameId) {
         console.error("Received an invalid gameState object. Missing or malformed data.", state);
         gameStatusElement.innerText = "Error: Invalid game state received from server. Please refresh.";
-        // Potentially force back to lobby if state is truly messed up
         showLobbyScreen();
         return;
     }
@@ -350,7 +398,6 @@ socket.on('numberMarked', (num) => {
         const currentBingoLineCount = checkBingo();
         if (gameStarted && currentBingoLineCount === 5) {
             console.log(`Player ${currentPlayerId} achieved BINGO! Emitting 'declareWin'.`);
-            // CORRECTED: No gameId parameter needed here, backend uses socket.id's playerGameId
             socket.emit('declareWin');
         }
     }
@@ -370,8 +417,6 @@ socket.on('playerDeclaredWin', (winningPlayerId) => {
         showMessageModal("Game Over!", `Player ${winningPlayerId.substring(0, 5)}... won the game!`);
         gameStatusElement.innerText = `Player ${winningPlayerId.substring(0, 5)}... won! Click 'Reset Game' to start a new round.`;
     }
-    // Optionally go back to lobby after win
-    // setTimeout(showLobbyScreen, 5000); // Go back after 5 seconds
 });
 
 // Listen for game reset event from server
