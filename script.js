@@ -1,5 +1,9 @@
+// script.js
 // Establish Socket.IO connection to the backend server
 const socket = io('https://bingo-backend-1-4ajn.onrender.com'); // <--- !!! ENSURE THIS MATCHES YOUR DEPLOYED BACKEND URL !!!
+
+// --- NEW: Backend HTTP URL for keep-alive pings ---
+const BACKEND_HTTP_URL = 'https://bingo-backend-1-4ajn.onrender.com'; // <--- !!! REPLACE WITH YOUR ACTUAL DEPLOYED BACKEND'S HTTP URL !!!
 
 // --- DOM Elements ---
 // Lobby Screen Elements
@@ -300,6 +304,23 @@ function addChatMessage(senderDisplayName, message, isSelf = false) {
     chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
 }
 
+/**
+ * NEW: Sends a periodic HTTP GET request to the backend to keep it awake.
+ */
+function sendKeepAlivePing() {
+    fetch(`${BACKEND_HTTP_URL}/ping`)
+        .then(response => {
+            if (!response.ok) {
+                console.warn('Keep-alive ping failed:', response.statusText);
+            } else {
+                console.log('Keep-alive ping successful.');
+            }
+        })
+        .catch(error => {
+            console.error('Keep-alive ping error:', error);
+        });
+}
+
 // --- Event Listeners for UI Elements ---
 
 // Copy Game ID to clipboard
@@ -435,6 +456,8 @@ socket.on('connect', () => {
     updatePlayerIdDisplay();
     console.log(`Connected with ID: ${currentPlayerId}, Username: ${currentUsername}`);
     showLobbyScreen();
+    // NEW: Start sending keep-alive pings on connect
+    sendKeepAlivePing();
 });
 
 socket.on('gameCreated', (gameId) => {
@@ -753,3 +776,7 @@ usernameInput.addEventListener('input', () => {
     currentUsername = usernameInput.value.trim();
     updatePlayerIdDisplay();
 });
+
+// NEW: Call the ping function periodically
+// Send a ping every 5 minutes (300000 ms)
+setInterval(sendKeepAlivePing, 300000);
