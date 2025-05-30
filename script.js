@@ -17,6 +17,7 @@ const boardElement = document.getElementById('board');
 const playerInfoElement = document.getElementById('player-info'); // This div contains game ID
 const playerIdSpanGameScreen = document.getElementById('player-id-game-screen'); // For Game Screen
 const currentRoomIdSpan = document.getElementById('current-room-id'); // Span for game ID in game screen
+const copyGameIdBtn = document.getElementById('copy-game-id-btn'); // NEW: Copy button
 const gameStatusElement = document.getElementById('game-status');
 const startGameBtn = document.getElementById('start-game-btn');
 const resetGameBtn = document.getElementById('reset-game-btn');
@@ -42,7 +43,7 @@ let currentUsername = "Player"; // Stores the chosen username for this player
 let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or 2)
 let currentGameId = null; // Stores the ID of the game room the player is in
 
-// NEW: Set to keep track of lines that have been visually struck
+// Set to keep track of lines that have been visually struck
 let struckLineIndices = new Set();
 
 // --- UI Switching Functions ---
@@ -136,7 +137,7 @@ function displayGameNotification(message, type = 'info', duration = 3000) {
 function initializeBoard() {
     numbers = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
     marked.fill(false);
-    struckLineIndices.clear(); // Clear previously struck lines - IMPORTANT
+    struckLineIndices.clear(); // Clear previously struck lines
     boardElement.innerHTML = ''; // This clears existing cells
 
     numbers.forEach((num, idx) => {
@@ -146,8 +147,8 @@ function initializeBoard() {
         cell.dataset.index = idx;
 
         // Ensure previously applied bingo-line-strike classes are removed when board is initialized
-        cell.classList.remove('bingo-line-strike'); // IMPORTANT: Clear existing strike classes
-        cell.classList.remove('marked'); // Also clear any marked classes on re-initialization
+        cell.classList.remove('bingo-line-strike');
+        cell.classList.remove('marked');
 
         cell.addEventListener('click', () => {
             if (gameStarted && isMyTurn && !marked[idx]) {
@@ -202,7 +203,7 @@ function checkBingo() {
         // Rows
         [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
         // Columns
-        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 17, 23], [4, 9, 14, 19, 24], // Corrected a typo here
+        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
         // Diagonals
         [0, 6, 12, 18, 24], // Top-left to bottom-right
         [4, 8, 12, 16, 20]  // Top-right to bottom-left
@@ -217,8 +218,8 @@ function checkBingo() {
             const lineKey = JSON.stringify(lineIndices);
 
             // If this line hasn't been struck yet, add it to the set and apply visual effect
-            if (!struckLineIndices.has(lineKey)) { // IMPORTANT: Use .has() for Set
-                struckLineIndices.add(lineKey); // IMPORTANT: Use .add() for Set
+            if (!struckLineIndices.has(lineKey)) {
+                struckLineIndices.add(lineKey);
                 lineIndices.forEach(idx => {
                     const cellElement = document.querySelectorAll('.cell')[idx];
                     if (cellElement) {
@@ -249,6 +250,24 @@ function addChatMessage(senderDisplayName, message, isSelf = false) {
 }
 
 // --- Event Listeners for UI Elements ---
+
+// NEW: Copy Game ID to clipboard
+copyGameIdBtn.addEventListener('click', () => {
+    const gameIdText = currentRoomIdSpan.innerText;
+    if (gameIdText) {
+        // Use a temporary textarea to copy text to clipboard
+        const tempInput = document.createElement('textarea');
+        tempInput.value = gameIdText;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        displayGameNotification("Game ID copied!", 'info', 2000);
+    } else {
+        displayGameNotification("No Game ID to copy.", 'error', 2000);
+    }
+});
+
 
 // Lobby Button Listeners
 createGameBtn.addEventListener('click', () => {
@@ -480,14 +499,14 @@ socket.on('numberMarked', (num) => {
 });
 
 // Listen for a player declaring win (now receives an object with winnerId and winningUsername)
-socket.on('playerDeclaredWin', (data) => { // *** CHANGE HERE ***
+socket.on('playerDeclaredWin', (data) => {
     console.log(`${data.winningUsername} declared win. Game ending.`);
     disableBoardClicks();
     gameStarted = false;
     startGameBtn.disabled = false;
     resetGameBtn.disabled = false;
     
-    // *** CHANGE HERE: Use winnerId to determine if current player won ***
+    // Use winnerId to determine if current player won
     if (data.winnerId === currentPlayerId) {
         showMessageModal("Congratulations!", "BINGO! You won the game!");
         gameStatusElement.innerText = "You won! Click 'Reset Game' to start a new round.";
