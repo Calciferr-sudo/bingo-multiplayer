@@ -202,7 +202,7 @@ function checkBingo() {
         // Rows
         [0, 1, 2, 3, 4], [5, 6, 7, 8, 9], [10, 11, 12, 13, 14], [15, 16, 17, 18, 19], [20, 21, 22, 23, 24],
         // Columns
-        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 18, 23], [4, 9, 14, 19, 24],
+        [0, 5, 10, 15, 20], [1, 6, 11, 16, 21], [2, 7, 12, 17, 22], [3, 8, 13, 17, 23], [4, 9, 14, 19, 24], // Corrected a typo here
         // Diagonals
         [0, 6, 12, 18, 24], // Top-left to bottom-right
         [4, 8, 12, 16, 20]  // Top-right to bottom-left
@@ -324,7 +324,7 @@ chatInput.addEventListener('keypress', (e) => {
 socket.on('connect', () => {
     currentPlayerId = socket.id;
     // Set a default username if not already set or cleared from a previous session
-    if (!currentUsername || currentUsername === "Player") { // If it's still default "Player"
+    if (!currentUsername || currentUsername.startsWith("Player-")) { // If it's still default "Player-"
         currentUsername = `Player-${socket.id.substring(0, 4)}`;
         usernameInput.value = currentUsername; // Set input field to default
     }
@@ -472,26 +472,28 @@ socket.on('numberMarked', (num) => {
         document.querySelectorAll('.cell')[idx].classList.add('marked');
 
         const currentBingoLineCount = checkBingo(); // Check for Bingo lines and apply strikes
-        if (gameStarted && currentBingoLineCount === 5) {
+        if (gameStarted && currentBingoLineCount >= 5) { // Check for >=5 lines for Bingo win
             console.log(`Player ${currentUsername} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
         }
     }
 });
 
-// Listen for a player declaring win (now receives username)
-socket.on('playerDeclaredWin', (winningUsername) => {
-    console.log(`${winningUsername} declared win. Game ending.`);
+// Listen for a player declaring win (now receives an object with winnerId and winningUsername)
+socket.on('playerDeclaredWin', (data) => { // *** CHANGE HERE ***
+    console.log(`${data.winningUsername} declared win. Game ending.`);
     disableBoardClicks();
     gameStarted = false;
     startGameBtn.disabled = false;
     resetGameBtn.disabled = false;
-    if (winningUsername === currentUsername) {
+    
+    // *** CHANGE HERE: Use winnerId to determine if current player won ***
+    if (data.winnerId === currentPlayerId) {
         showMessageModal("Congratulations!", "BINGO! You won the game!");
         gameStatusElement.innerText = "You won! Click 'Reset Game' to start a new round.";
     } else {
-        showMessageModal("Game Over!", `${winningUsername} won the game!`);
-        gameStatusElement.innerText = `${winningUsername} won! Click 'Reset Game' to start a new round.`;
+        showMessageModal("Game Over!", `${data.winningUsername} won the game!`);
+        gameStatusElement.innerText = `${data.winningUsername} won! Click 'Reset Game' to start a new round.`;
     }
 });
 
