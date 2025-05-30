@@ -53,7 +53,7 @@ const rematchModalMessage = document.getElementById('rematch-modal-message');
 const rematchAcceptBtn = document.getElementById('rematch-accept-btn');
 const rematchDeclineBtn = document.getElementById('rematch-decline-btn');
 
-// NEW: BINGO Tracker Elements
+// BINGO Tracker Elements
 const bingoLetters = ['B', 'I', 'N', 'G', 'O'].map(letter => document.getElementById(`bingo-${letter.toLowerCase()}`));
 
 
@@ -66,6 +66,7 @@ let currentPlayerId = null; // Stores the unique socket ID assigned to this play
 let currentUsername = "Player"; // Stores the chosen username for this player
 let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or 2)
 let currentGameId = null; // Stores the ID of the game room the player is in
+let currentWinnerId = null; // NEW: Stores the ID of the winning player, or null if no winner yet
 
 // Set to keep track of lines that have been visually struck
 let struckLineIndices = new Set();
@@ -165,7 +166,7 @@ function initializeBoard() {
     struckLineIndices.clear(); // Clear previously struck lines
     boardElement.innerHTML = ''; // This clears existing cells
 
-    // NEW: Reset BINGO tracker letters
+    // Reset BINGO tracker letters
     bingoLetters.forEach(letterElement => {
         if (letterElement) {
             letterElement.classList.remove('marked');
@@ -262,7 +263,7 @@ function checkBingo() {
         }
     });
 
-    // NEW: Update BINGO tracker letters based on bingoLineCount
+    // Update BINGO tracker letters based on bingoLineCount
     bingoLetters.forEach((letterElement, index) => {
         if (letterElement) {
             if (index < bingoLineCount) {
@@ -528,12 +529,13 @@ socket.on('gameState', (state) => {
     // Update local game state variables
     gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
+    currentWinnerId = state.winnerId; // NEW: Update global winner ID from server state
 
     // --- IMPORTANT: Handle button states and status messages based on current game state ---
-    if (state.winnerId) { // Game has ended with a winner
+    if (currentWinnerId) { // Game has ended with a winner
         startGameBtn.disabled = true; // Disable Start Game button after a win
         resetGameBtn.disabled = false; // Enable Reset button for rematch
-        gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === state.winnerId)?.username || 'Someone'} won. Click 'Reset Game' for a rematch.`;
+        gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === currentWinnerId)?.username || 'Someone'} won. Click 'Reset Game' for a rematch.`;
         disableBoardClicks(); // Ensure board is disabled
     } else if (state.pendingNewMatchRequest) { // A rematch request is pending
         startGameBtn.disabled = true;
@@ -596,7 +598,8 @@ socket.on('numberMarked', (num) => {
         document.querySelectorAll('.cell')[idx].classList.add('marked');
 
         const currentBingoLineCount = checkBingo();
-        if (gameStarted && currentBingoLineCount >= 5) {
+        // Only emit 'declareWin' if the game is still considered started and no winner is known yet
+        if (gameStarted && currentBingoLineCount >= 5 && !currentWinnerId) { // NEW: Check currentWinnerId
             console.log(`Player ${currentUsername} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
         }
@@ -607,7 +610,8 @@ socket.on('playerDeclaredWin', (data) => {
     console.log(`${data.winningUsername} declared win. Game ending.`);
     disableBoardClicks();
     gameStarted = false; // Game is no longer started
-    
+    currentWinnerId = data.winnerId; // Ensure local winner ID is set immediately
+
     // The gameState update will now correctly set button states based on winnerId.
 
     if (data.winnerId === currentPlayerId) {
@@ -624,6 +628,7 @@ socket.on('gameReset', () => {
     initializeBoard(); // This now also clears struckLineIndices and removes strike classes
     gameStarted = false;
     isMyTurn = false;
+    currentWinnerId = null; // NEW: Reset winner ID on game reset
     // Button states will be handled by the gameState update
     gameStatusElement.innerText = "Game has been reset. Waiting for players to ready up or another player to join.";
     showMessageModal("Game Reset", "The game has been reset. A new round can begin!");
@@ -644,6 +649,7 @@ socket.on('disconnect', () => {
     showLobbyScreen();
     currentGameId = null;
     currentPlayerNumber = null;
+    currentWinnerId = null; // NEW: Reset on disconnect
 });
 
 socket.on('connect_error', (error) => {
@@ -653,6 +659,7 @@ socket.on('connect_error', (error) => {
     showLobbyScreen();
     currentGameId = null;
     currentPlayerNumber = null;
+    currentWinnerId = null; // NEW: Reset on connection error
 });
 
 document.addEventListener('DOMContentLoaded', () => {
