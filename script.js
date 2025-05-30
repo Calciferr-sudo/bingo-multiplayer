@@ -43,7 +43,7 @@ let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or
 let currentGameId = null; // Stores the ID of the game room the player is in
 
 // NEW: Set to keep track of lines that have been visually struck
-let struckLineIndices = new Set(); 
+let struckLineIndices = new Set();
 
 // --- UI Switching Functions ---
 function showLobbyScreen() {
@@ -136,7 +136,7 @@ function displayGameNotification(message, type = 'info', duration = 3000) {
 function initializeBoard() {
     numbers = Array.from({ length: 25 }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
     marked.fill(false);
-    struckLineIndices.clear(); // Clear previously struck lines
+    struckLineIndices.clear(); // Clear previously struck lines - IMPORTANT
     boardElement.innerHTML = ''; // This clears existing cells
 
     numbers.forEach((num, idx) => {
@@ -144,6 +144,10 @@ function initializeBoard() {
         cell.classList.add('cell');
         cell.innerText = num;
         cell.dataset.index = idx;
+
+        // Ensure previously applied bingo-line-strike classes are removed when board is initialized
+        cell.classList.remove('bingo-line-strike'); // IMPORTANT: Clear existing strike classes
+        cell.classList.remove('marked'); // Also clear any marked classes on re-initialization
 
         cell.addEventListener('click', () => {
             if (gameStarted && isMyTurn && !marked[idx]) {
@@ -213,8 +217,8 @@ function checkBingo() {
             const lineKey = JSON.stringify(lineIndices);
 
             // If this line hasn't been struck yet, add it to the set and apply visual effect
-            if (!struckLineIndices.has(lineKey)) {
-                struckLineIndices.add(lineKey);
+            if (!struckLineIndices.has(lineKey)) { // IMPORTANT: Use .has() for Set
+                struckLineIndices.add(lineKey); // IMPORTANT: Use .add() for Set
                 lineIndices.forEach(idx => {
                     const cellElement = document.querySelectorAll('.cell')[idx];
                     if (cellElement) {
@@ -425,7 +429,7 @@ socket.on('gameState', (state) => {
     } else { // If game IS started
         startGameBtn.disabled = true;
         resetGameBtn.disabled = false; // Reset button enabled when game is in progress or won
-        
+
         // Find the username of the player whose turn it is
         const turnPlayer = state.players.find(p => p.id === state.currentTurnPlayerId);
         const turnPlayerName = turnPlayer ? turnPlayer.username : "Unknown Player";
@@ -456,7 +460,7 @@ socket.on('gameState', (state) => {
     // After updating marked numbers, check for Bingo lines to apply strikes
     // We call checkBingo here to ensure lines are struck based on the *latest* marked numbers from the server.
     // This is important for clients who might join mid-game or if their marked state gets out of sync.
-    checkBingo(); 
+    checkBingo();
 });
 
 // Listen for a number being marked (called) by any player
