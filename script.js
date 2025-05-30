@@ -67,8 +67,10 @@ let currentUsername = "Player"; // Stores the chosen username for this player
 let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or 2)
 let currentGameId = null; // Stores the ID of the game room the player is in
 let currentWinnerId = null; // Stores the ID of the winning player, or null if no winner yet
-let isDraw = false; // NEW: Flag to indicate if the game ended in a draw
+let isDraw = false; // Flag to indicate if the game ended in a draw
 
+// NEW: Flag to help manage rapid game-ending events and prevent conflicting modal displays
+let processingGameEnd = false; 
 
 // Set to keep track of lines that have been visually struck
 let struckLineIndices = new Set();
@@ -89,7 +91,9 @@ function showLobbyScreen() {
     createGameBtn.disabled = false;
     joinGameBtn.disabled = false;
     rematchModal.style.display = 'none'; // Ensure rematch modal is hidden
-    isDraw = false; // NEW: Reset draw state
+    isDraw = false; // Reset draw state
+    currentWinnerId = null; // Ensure winner is cleared
+    processingGameEnd = false; // Reset processing flag
 }
 
 function showGameScreen() {
@@ -512,12 +516,15 @@ socket.on('gameDraw', (data) => {
     console.log(`Game ended in a draw on number ${data.number}.`);
     disableBoardClicks();
     gameStarted = false; // Game is no longer started
-    currentWinnerId = null; // Ensure no winner is set
+    currentWinnerId = null; // IMPORTANT: Clear winner ID on draw
     isDraw = true; // Set draw state
+    processingGameEnd = true; // Set flag to indicate we're processing a game end
 
-    // Button states will be handled by the gameState update
+    // Ensure any previously shown 'win' modal is hidden
+    hideMessageModal(); 
     showMessageModal("It's a Draw!", `Both players got Bingo on number ${data.number}!`);
     gameStatusElement.innerText = `It's a Draw! Click 'Reset Game' for a rematch.`;
+    // The gameState update will correctly set button states based on isDraw.
 });
 
 
@@ -553,19 +560,39 @@ socket.on('gameState', (state) => {
     gameStarted = state.gameStarted;
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
     currentWinnerId = state.winnerId; // Update global winner ID from server state
-    isDraw = state.draw; // NEW: Update local draw state from server state
+    isDraw = state.draw; // Update local draw state from server state
+
+    // Reset processing flag if game is no longer ended (e.g., after a reset)
+    if (!state.winnerId && !state.draw && state.gameStarted) {
+        processingGameEnd = false;
+    }
+
 
     // --- IMPORTANT: Handle button states and status messages based on current game state ---
-    if (currentWinnerId) { // Game has ended with a winner
-        startGameBtn.disabled = true; // Disable Start Game button after a win
-        resetGameBtn.disabled = false; // Enable Reset button for rematch
-        gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === currentWinnerId)?.username || 'Someone'} won. Click 'Reset Game' for a rematch.`;
-        disableBoardClicks(); // Ensure board is disabled
-    } else if (isDraw) { // NEW: Game has ended in a draw
-        startGameBtn.disabled = true; // Disable Start Game button after a draw
-        resetGameBtn.disabled = false; // Enable Reset button for rematch
+    if (isDraw) { // Prioritize draw state for display
+        startGameBtn.disabled = true;
+        resetGameBtn.disabled = false;
         gameStatusElement.innerText = `It's a Draw! Click 'Reset Game' for a rematch.`;
-        disableBoardClicks(); // Ensure board is disabled
+        // Only show modal if we haven't already processed a game end event that would show it
+        if (!processingGameEnd) {
+             showMessageModal("It's a Draw!", `Both players got Bingo on number ${state.markedNumbers[state.markedNumbers.length-1]}!`);
+             processingGameEnd = true; // Mark as processed
+        }
+        disableBoardClicks();
+    } else if (currentWinnerId) { // Game has ended with a winner (and it's not a draw)
+        startGameBtn.disabled = true;
+        resetGameBtn.disabled = false;
+        gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === currentWinnerId)?.username || 'Someone'} won. Click 'Reset Game' for a rematch.`;
+        // Only show modal if we haven't already processed a game end event that would show it
+        if (!processingGameEnd) {
+            if (currentWinnerId === currentPlayerId) {
+                showMessageModal("Congratulations!", "BINGO! You won the game!");
+            } else {
+                showMessageModal("Game Over!", `${state.players.find(p => p.id === currentWinnerId)?.username || 'Someone'} won the game!`);
+            }
+            processingGameEnd = true; // Mark as processed
+        }
+        disableBoardClicks();
     }
     else if (state.pendingNewMatchRequest) { // A rematch request is pending
         startGameBtn.disabled = true;
@@ -590,6 +617,7 @@ socket.on('gameState', (state) => {
             gameStatusElement.innerText = `Waiting for ${turnPlayerName} to call a number.`;
             disableBoardClicks();
         }
+        processingGameEnd = false; // Ensure flag is off if game becomes active again
     } else { // Game is not started (e.g., lobby state, after full reset, or initial join, or after a decline)
         if (state.players.length >= 2) {
             startGameBtn.disabled = false; // Enable if 2 players are present and no game is started/won/pending
@@ -601,6 +629,7 @@ socket.on('gameState', (state) => {
             gameStatusElement.innerText = "Waiting for another player to join...";
         }
         disableBoardClicks();
+        processingGameEnd = false; // Ensure flag is off if game is not started
     }
 
     // Update board based on globally marked numbers
@@ -629,7 +658,7 @@ socket.on('numberMarked', (num) => {
 
         const currentBingoLineCount = checkBingo();
         // Only emit 'declareWin' if the game is still considered started and no winner is known yet, AND not a draw
-        if (gameStarted && currentBingoLineCount >= 5 && !currentWinnerId && !isDraw) { // NEW: Check isDraw
+        if (gameStarted && currentBingoLineCount >= 5 && !currentWinnerId && !isDraw) {
             console.log(`Player ${currentUsername} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
         }
@@ -637,11 +666,19 @@ socket.on('numberMarked', (num) => {
 });
 
 socket.on('playerDeclaredWin', (data) => {
+    // ONLY process if we are not already processing a draw (which takes precedence)
+    if (isDraw) { // If it's already a draw, ignore a late playerDeclaredWin
+        console.log("Ignoring playerDeclaredWin, game is already in a draw state.");
+        return;
+    }
+    // Set processingGameEnd true here to prevent conflicting modals from gameState
+    processingGameEnd = true;
+
     console.log(`${data.winningUsername} declared win. Game ending.`);
     disableBoardClicks();
     gameStarted = false; // Game is no longer started
     currentWinnerId = data.winnerId; // Ensure local winner ID is set immediately
-    isDraw = false; // NEW: Ensure not a draw
+    isDraw = false; // Ensure not a draw
 
     // The gameState update will now correctly set button states based on winnerId.
 
@@ -660,7 +697,8 @@ socket.on('gameReset', () => {
     gameStarted = false;
     isMyTurn = false;
     currentWinnerId = null; // Reset winner ID on game reset
-    isDraw = false; // NEW: Reset draw state on game reset
+    isDraw = false; // Reset draw state on game reset
+    processingGameEnd = false; // Reset processing flag on game reset
     // Button states will be handled by the gameState update
     gameStatusElement.innerText = "Game has been reset. Waiting for players to ready up or another player to join.";
     showMessageModal("Game Reset", "The game has been reset. A new round can begin!");
@@ -682,7 +720,8 @@ socket.on('disconnect', () => {
     currentGameId = null;
     currentPlayerNumber = null;
     currentWinnerId = null; // Reset on disconnect
-    isDraw = false; // NEW: Reset on disconnect
+    isDraw = false; // Reset on disconnect
+    processingGameEnd = false; // Reset on disconnect
 });
 
 socket.on('connect_error', (error) => {
@@ -693,7 +732,8 @@ socket.on('connect_error', (error) => {
     currentGameId = null;
     currentPlayerNumber = null;
     currentWinnerId = null; // Reset on connection error
-    isDraw = false; // NEW: Reset on connection error
+    isDraw = false; // Reset on connection error
+    processingGameEnd = false; // Reset on connection error
 });
 
 document.addEventListener('DOMContentLoaded', () => {
