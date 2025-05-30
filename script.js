@@ -4,18 +4,19 @@ const socket = io('https://bingo-backend-1-4ajn.onrender.com');
 // --- DOM Elements ---
 // Lobby Screen Elements
 const lobbyScreen = document.getElementById('lobby-screen');
+const usernameInput = document.getElementById('username-input'); // NEW
 const gameIdInput = document.getElementById('game-id-input');
 const createGameBtn = document.getElementById('create-game-btn');
 const joinGameBtn = document.getElementById('join-game-btn');
 const lobbyStatusElement = document.getElementById('lobby-status');
 const playerIdDisplayLobby = document.getElementById('player-id'); // For Lobby Screen
 
-// Game Screen Elements (Existing)
-const gameScreen = document.getElementById('game-screen'); // New container for game UI
+// Game Screen Elements
+const gameScreen = document.getElementById('game-screen');
 const boardElement = document.getElementById('board');
 const playerInfoElement = document.getElementById('player-info'); // This div contains game ID
 const playerIdSpanGameScreen = document.getElementById('player-id-game-screen'); // For Game Screen
-const currentRoomIdSpan = document.getElementById('current-room-id'); // New span for game ID in game screen
+const currentRoomIdSpan = document.getElementById('current-room-id'); // Span for game ID in game screen
 const gameStatusElement = document.getElementById('game-status');
 const startGameBtn = document.getElementById('start-game-btn');
 const resetGameBtn = document.getElementById('reset-game-btn');
@@ -27,7 +28,7 @@ const modalTitle = document.getElementById('modal-title');
 const modalMessage = document.getElementById('modal-message');
 const modalOkBtn = document.getElementById('modal-ok-btn');
 
-// NEW: Game Notifications Element
+// Game Notifications Element
 const gameNotificationsElement = document.getElementById('game-notifications');
 
 
@@ -36,7 +37,9 @@ let numbers = []; // Array to hold the numbers on the player's board (1-25, shuf
 let marked = Array(25).fill(false); // Boolean array to track marked cells
 let gameStarted = false; // Flag to indicate if the game has started
 let isMyTurn = false; // Flag to indicate if it's the current player's turn
-let currentPlayerId = null; // Stores the unique ID assigned to this player by the server
+let currentPlayerId = null; // Stores the unique socket ID assigned to this player by the server
+let currentUsername = "Player"; // Stores the chosen username for this player
+let currentPlayerNumber = null; // Stores the assigned player number (e.g., 1 or 2)
 let currentGameId = null; // Stores the ID of the game room the player is in
 
 // --- UI Switching Functions ---
@@ -50,6 +53,7 @@ function showLobbyScreen() {
     currentRoomIdSpan.innerText = '';
     gameStatusElement.innerText = '';
     chatMessagesElement.innerHTML = '';
+    updatePlayerIdDisplay(); // Update display for lobby
 }
 
 function showGameScreen() {
@@ -59,6 +63,17 @@ function showGameScreen() {
 }
 
 // --- Helper Functions ---
+
+/**
+ * Updates the player ID display on both lobby and game screens.
+ */
+function updatePlayerIdDisplay() {
+    const displayId = currentUsername || `Player ${currentPlayerId ? currentPlayerId.substring(0, 4) : '...'}`;
+    const displayNum = currentPlayerNumber ? ` (Player ${currentPlayerNumber})` : '';
+
+    playerIdDisplayLobby.innerText = `${displayId}${displayNum}`;
+    playerIdSpanGameScreen.innerText = `${displayId}${displayNum}`;
+}
 
 /**
  * Displays a custom message box modal.
@@ -75,12 +90,11 @@ function showMessageModal(title, message) {
  * Hides the custom message box modal.
  */
 function hideMessageModal() {
-    modalOkBtn.removeEventListener('click', hideMessageModal); // Remove previous listener to prevent duplicates
-    modalOkBtn.addEventListener('click', hideMessageModal); // Add new listener
     messageModal.style.display = 'none'; // Hide the modal
 }
+modalOkBtn.addEventListener('click', hideMessageModal); // Ensure this listener is always active
 
-// NEW: Temporary game notifications
+// Temporary game notifications
 let notificationTimeout;
 /**
  * Displays a temporary notification on the game screen.
@@ -128,13 +142,10 @@ function initializeBoard() {
                 socket.emit('markNumber', calledNumber);
                 disableBoardClicks(); // Disable clicks after calling a number
             } else if (!gameStarted) {
-                // Now using game notification for these
                 displayGameNotification("Game has not started yet.", 'error', 2500);
             } else if (!isMyTurn) {
-                // Now using game notification for these
                 displayGameNotification("It's not your turn!", 'error', 2500);
             } else if (marked[idx]) {
-                // Now using game notification for these
                 displayGameNotification("Number already called!", 'error', 2500);
             }
         });
@@ -190,39 +201,54 @@ function checkBingo() {
 
 /**
  * Appends a new message to the chat display.
- * @param {string} senderId - The ID of the sender.
+ * @param {string} senderDisplayName - The username or player number of the sender.
  * @param {string} message - The message content.
  * @param {boolean} isSelf - True if the message is from the current player.
  */
-function addChatMessage(senderId, message, isSelf = false) {
+function addChatMessage(senderDisplayName, message, isSelf = false) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
-    const sender = isSelf ? 'You' : senderId;
-    messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+    // Display "You" if it's the current player, otherwise the sender's display name
+    const displaySender = isSelf ? 'You' : senderDisplayName;
+    messageElement.innerHTML = `<strong>${displaySender}:</strong> ${message}`;
     chatMessagesElement.appendChild(messageElement);
     chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
 }
 
 // --- Event Listeners for UI Elements ---
 
-modalOkBtn.addEventListener('click', hideMessageModal);
-
 // Lobby Button Listeners
 createGameBtn.addEventListener('click', () => {
-    console.log('Requesting to create new game...');
-    socket.emit('createGame');
+    const username = usernameInput.value.trim();
+    if (!username) {
+        showMessageModal("Username Required", "Please enter a username before creating a game.");
+        return;
+    }
+    console.log(`Requesting to create new game with username: ${username}...`);
+    socket.emit('createGame', username);
     lobbyStatusElement.innerText = "Creating game...";
+    createGameBtn.disabled = true;
+    joinGameBtn.disabled = true;
 });
 
 joinGameBtn.addEventListener('click', () => {
     const gameId = gameIdInput.value.trim().toUpperCase();
-    if (gameId) {
-        console.log(`Requesting to join game: ${gameId}`);
-        socket.emit('joinGame', gameId);
-        lobbyStatusElement.innerText = `Joining game ${gameId}...`;
-    } else {
-        showMessageModal("Input Required", "Please enter a Game ID to join.");
+    const username = usernameInput.value.trim();
+
+    if (!username) {
+        showMessageModal("Username Required", "Please enter a username before joining a game.");
+        return;
     }
+    if (!gameId) {
+        showMessageModal("Input Required", "Please enter a Game ID to join.");
+        return;
+    }
+
+    console.log(`Requesting to join game: ${gameId} with username: ${username}`);
+    socket.emit('joinGame', gameId, username);
+    lobbyStatusElement.innerText = `Joining game ${gameId}...`;
+    createGameBtn.disabled = true;
+    joinGameBtn.disabled = true;
 });
 
 // Game Screen Button Listeners
@@ -264,13 +290,17 @@ chatInput.addEventListener('keypress', (e) => {
 
 socket.on('connect', () => {
     currentPlayerId = socket.id;
-    playerIdDisplayLobby.innerText = currentPlayerId; // Display ID on lobby screen
-    playerIdSpanGameScreen.innerText = currentPlayerId; // Display ID on game screen
-    console.log(`Connected with ID: ${currentPlayerId}`);
+    // Set a default username if not already set or cleared from a previous session
+    if (!currentUsername || currentUsername === "Player") { // If it's still default "Player"
+        currentUsername = `Player-${socket.id.substring(0, 4)}`;
+        usernameInput.value = currentUsername; // Set input field to default
+    }
+    updatePlayerIdDisplay(); // Update display on connect
+    console.log(`Connected with ID: ${currentPlayerId}, Username: ${currentUsername}`);
     showLobbyScreen(); // Show lobby first
 });
 
-// New: Listen for game creation confirmation
+// Listen for game creation confirmation
 socket.on('gameCreated', (gameId) => {
     currentGameId = gameId;
     currentRoomIdSpan.innerText = currentGameId; // Display game ID on game screen
@@ -280,7 +310,7 @@ socket.on('gameCreated', (gameId) => {
     chatMessagesElement.innerHTML = ''; // Clear chat for new game
 });
 
-// New: Listen for game join confirmation
+// Listen for game join confirmation
 socket.on('gameJoined', (gameId) => {
     currentGameId = gameId;
     currentRoomIdSpan.innerText = currentGameId; // Display game ID on game screen
@@ -290,10 +320,9 @@ socket.on('gameJoined', (gameId) => {
     chatMessagesElement.innerHTML = ''; // Clear chat for new game
 });
 
-// New: Listen for game errors (e.g., ID not found, game started, etc.)
+// Listen for game errors (e.g., ID not found, game started, etc.)
 socket.on('gameError', (message) => {
     console.error('Game Error:', message);
-    // Use the new game notification system for common in-game errors
     if (message === 'It is not your turn.' || message === 'Number already called.') {
         displayGameNotification(message, 'error', 2500); // Shorter duration for quick feedback
     } else {
@@ -306,18 +335,18 @@ socket.on('gameError', (message) => {
     }
 });
 
-// NEW: Listen for user joined notification
-socket.on('userJoined', (playerId) => {
-    if (playerId === currentPlayerId) return; // Don't notify self
-    displayGameNotification(`Player ${playerId.substring(0, 5)}... joined!`);
-    console.log(`Player ${playerId.substring(0, 5)}... joined the game.`);
+// Listen for user joined notification (now receives username)
+socket.on('userJoined', (username) => {
+    // No need to check if self, backend handles this by emitting only to others (socket.to)
+    displayGameNotification(`${username} joined!`);
+    console.log(`${username} joined the game.`);
 });
 
-// NEW: Listen for user left notification
-socket.on('userLeft', (playerId) => {
-    if (playerId === currentPlayerId) return; // Don't notify self
-    displayGameNotification(`Player ${playerId.substring(0, 5)}... left the game.`);
-    console.log(`Player ${playerId.substring(0, 5)}... left the game.`);
+// Listen for user left notification (now receives username)
+socket.on('userLeft', (username) => {
+    // No need to check if self
+    displayGameNotification(`${username} left the game.`);
+    console.log(`${username} left the game.`);
 });
 
 // Listen for game state updates from the server
@@ -339,35 +368,55 @@ socket.on('gameState', (state) => {
     }
 
     gameStarted = state.gameStarted;
+
+    // Find current player's data from the received state
+    const selfPlayer = state.players.find(p => p.id === currentPlayerId);
+    if (selfPlayer) {
+        currentUsername = selfPlayer.username;
+        currentPlayerNumber = selfPlayer.playerNumber;
+        updatePlayerIdDisplay(); // Update display based on server-assigned data
+    } else {
+        // This case should ideally not happen if player is in game, but handle gracefully
+        currentUsername = `Disconnected Player`;
+        currentPlayerNumber = null;
+        updatePlayerIdDisplay();
+        console.error("Current player not found in gameState players list.");
+    }
+
     isMyTurn = state.currentTurnPlayerId === currentPlayerId;
 
-    console.log(`Updated client state for Game ${currentGameId}: gameStarted=${gameStarted}, isMyTurn=${isMyTurn}, players.length=${state.players.length}`);
+    // console.log(`Updated client state for Game ${currentGameId}: gameStarted=${gameStarted}, isMyTurn=${isMyTurn}, players.length=${state.players.length}`);
 
     if (!gameStarted) {
         if (state.players.length >= 2) {
             startGameBtn.disabled = false;
             gameStatusElement.innerText = "Two players ready! Click 'Start Game' to begin.";
-            console.log('UI Update: Start Game button ENABLED (2+ players, game not started)');
+            // console.log('UI Update: Start Game button ENABLED (2+ players, game not started)');
         } else {
             startGameBtn.disabled = true;
             gameStatusElement.innerText = "Waiting for another player to join...";
-            console.log('UI Update: Start Game button DISABLED (<2 players, game not started)');
+            // console.log('UI Update: Start Game button DISABLED (<2 players, game not started)');
         }
         resetGameBtn.disabled = true;
         disableBoardClicks();
-        console.log('UI Update: Reset Game button DISABLED, board clicks DISABLED');
+        // console.log('UI Update: Reset Game button DISABLED, board clicks DISABLED');
     } else { // If game IS started
         startGameBtn.disabled = true;
         resetGameBtn.disabled = false;
-        console.log('UI Update: Start Game button DISABLED, Reset Game button ENABLED');
+        // console.log('UI Update: Start Game button DISABLED, Reset Game button ENABLED');
+        
+        // Find the username of the player whose turn it is
+        const turnPlayer = state.players.find(p => p.id === state.currentTurnPlayerId);
+        const turnPlayerName = turnPlayer ? turnPlayer.username : "Unknown Player";
+
         if (isMyTurn) {
             gameStatusElement.innerText = "Your Turn! Click a number to call it.";
             enableBoardClicks();
-            console.log('UI Update: It is your turn, board clicks ENABLED');
+            // console.log('UI Update: It is your turn, board clicks ENABLED');
         } else {
-            gameStatusElement.innerText = `Waiting for ${state.currentTurnPlayerId.substring(0, 5)}... to call a number.`; // Shorten ID for display
+            gameStatusElement.innerText = `Waiting for ${turnPlayerName} to call a number.`;
             disableBoardClicks();
-            console.log('UI Update: Not your turn, board clicks DISABLED');
+            // console.log('UI Update: Not your turn, board clicks DISABLED');
         }
     }
 
@@ -383,7 +432,7 @@ socket.on('gameState', (state) => {
             document.querySelectorAll('.cell')[idx].classList.add('marked');
         }
     });
-    console.log('UI Update: Board marked based on server state.');
+    // console.log('UI Update: Board marked based on server state.');
 });
 
 // Listen for a number being marked (called) by any player
@@ -393,29 +442,29 @@ socket.on('numberMarked', (num) => {
     if (idx > -1 && !marked[idx]) {
         marked[idx] = true;
         document.querySelectorAll('.cell')[idx].classList.add('marked');
-        gameStatusElement.innerText = `Number ${num} was called!`;
+        // gameStatusElement.innerText = `Number ${num} was called!`; // This is often overwritten by gameState.
 
         const currentBingoLineCount = checkBingo();
         if (gameStarted && currentBingoLineCount === 5) {
-            console.log(`Player ${currentPlayerId} achieved BINGO! Emitting 'declareWin'.`);
+            console.log(`Player ${currentUsername} achieved BINGO! Emitting 'declareWin'.`);
             socket.emit('declareWin');
         }
     }
 });
 
-// Listen for a player declaring win
-socket.on('playerDeclaredWin', (winningPlayerId) => {
-    console.log(`Player ${winningPlayerId} declared win. Game ending.`);
+// Listen for a player declaring win (now receives username)
+socket.on('playerDeclaredWin', (winningUsername) => {
+    console.log(`${winningUsername} declared win. Game ending.`);
     disableBoardClicks();
     gameStarted = false;
     startGameBtn.disabled = false;
     resetGameBtn.disabled = false;
-    if (winningPlayerId === currentPlayerId) {
+    if (winningUsername === currentUsername) {
         showMessageModal("Congratulations!", "BINGO! You won the game!");
         gameStatusElement.innerText = "You won! Click 'Reset Game' to start a new round.";
     } else {
-        showMessageModal("Game Over!", `Player ${winningPlayerId.substring(0, 5)}... won the game!`);
-        gameStatusElement.innerText = `Player ${winningPlayerId.substring(0, 5)}... won! Click 'Reset Game' to start a new round.`;
+        showMessageModal("Game Over!", `${winningUsername} won the game!`);
+        gameStatusElement.innerText = `${winningUsername} won! Click 'Reset Game' to start a new round.`;
     }
 });
 
@@ -431,10 +480,11 @@ socket.on('gameReset', () => {
     showMessageModal("Game Reset", "The game has been reset. A new round can begin!");
 });
 
-// Listen for incoming chat messages
+// Listen for incoming chat messages (senderId is now username)
 socket.on('message', (data) => {
-    const isSelf = data.senderId === currentPlayerId;
-    addChatMessage(data.senderId.substring(0, 5) + '...', data.message, isSelf); // Shorten sender ID
+    // Check if the sender is the current player by username
+    const isSelf = data.senderId === currentUsername;
+    addChatMessage(data.senderId, data.message, isSelf);
 });
 
 // Listen for server errors or disconnections
@@ -447,6 +497,7 @@ socket.on('disconnect', () => {
     showMessageModal("Disconnected", "You have been disconnected from the server. Please refresh the page to reconnect.");
     showLobbyScreen(); // Go back to lobby on disconnect
     currentGameId = null; // Clear current game ID
+    currentPlayerNumber = null; // Clear player number
 });
 
 socket.on('connect_error', (error) => {
@@ -455,9 +506,15 @@ socket.on('connect_error', (error) => {
     showMessageModal("Connection Error", `Could not connect to the game server: ${error.message}`);
     showLobbyScreen(); // Go back to lobby on connection error
     currentGameId = null; // Clear current game ID
+    currentPlayerNumber = null; // Clear player number
 });
 
 // --- Initial Setup ---
 // The page will initially show the lobby screen due to socket.on('connect')
 // initializeBoard() is now called when showGameScreen() is called.
 // Buttons in game screen are controlled by gameState updates.
+// Set a default username when the script loads or on connect if empty
+document.addEventListener('DOMContentLoaded', () => {
+    usernameInput.value = `Player-${socket.id ? socket.id.substring(0, 4) : '...'}`;
+    updatePlayerIdDisplay(); // Initialize display
+});

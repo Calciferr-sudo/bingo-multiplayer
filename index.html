@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
     <title>Bingo Multiplayer</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap'); /* Added 700 for bolder text */
@@ -147,6 +148,11 @@
             font-weight: 700;
             color: #007bff;
         }
+        #player-id-game-screen {
+            font-weight: 700;
+            color: #007bff;
+        }
+
 
         .controls {
             margin-top: 20px;
@@ -312,7 +318,7 @@
             font-weight: 600;
         }
 
-        #game-id-input {
+        #game-id-input, #username-input { /* Apply to both inputs */
             width: calc(100% - 40px); /* Account for padding */
             padding: 14px 20px; /* More padding */
             border: 2px solid #ccc; /* Slightly bolder border */
@@ -324,7 +330,7 @@
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        #game-id-input:focus {
+        #game-id-input:focus, #username-input:focus { /* Apply to both inputs */
             outline: none;
             border-color: #007bff; /* Highlight on focus */
             box-shadow: 0 0 0 3px rgba(0,123,255,0.2); /* Subtle glow */
@@ -410,7 +416,7 @@
             display: none;
         }
 
-        /* New: Game Notifications Container */
+        /* Game Notifications Container */
         .game-notifications {
             position: fixed;
             bottom: 20px;
@@ -476,7 +482,7 @@
                 font-size: 1rem;
             }
 
-            #game-id-input, .lobby-action-btn {
+            #game-id-input, #username-input, .lobby-action-btn { /* Apply to all inputs/buttons */
                 width: calc(100% - 20px); /* Adjust width */
                 padding: 12px 15px;
                 font-size: 1rem;
@@ -524,6 +530,11 @@
         <p class="lobby-tagline">Join an existing game by ID or create your own to start playing.</p>
 
         <div class="lobby-input-section">
+            <label for="username-input" class="input-label">Your Username:</label>
+            <input type="text" id="username-input" placeholder="e.g., BingoMaster" maxlength="15" value="Player" />
+        </div>
+
+        <div class="lobby-input-section">
             <label for="game-id-input" class="input-label">Enter Game ID:</label>
             <input type="text" id="game-id-input" placeholder="e.g., ABC123" maxlength="6" />
             <button id="join-game-btn" class="btn btn-secondary lobby-action-btn">Join Game</button>
@@ -544,7 +555,7 @@
     <div id="game-screen">
         <div class="game-container">
             <div id="player-info">
-                Your ID: <span id="player-id-game-screen"></span><br>
+                Your Player ID: <span id="player-id-game-screen"></span><br>
                 Game ID: <span id="current-room-id"></span>
             </div>
             <div id="game-status">Waiting for game to start...</div>
