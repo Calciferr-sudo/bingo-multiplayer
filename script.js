@@ -435,6 +435,7 @@ rematchAcceptBtn.addEventListener('click', () => {
     socket.emit('acceptNewMatch');
     rematchModal.style.display = 'none';
     gameStatusElement.innerText = "Accepted rematch. Starting new round...";
+    // The server will send a gameReset event, which will handle board and button states.
 });
 
 rematchDeclineBtn.addEventListener('click', () => {
@@ -526,9 +527,11 @@ socket.on('newMatchRequested', (data) => { // 'data' will now be { requesterId, 
 
 // Listener when new match is accepted
 socket.on('newMatchAccepted', () => {
+    // This event is now primarily for notification. The actual reset and state update
+    // will come from the 'gameReset' and 'gameState' events emitted by the server
+    // after the 'acceptNewMatch' call.
     displayGameNotification("Rematch accepted! Starting new game.", 'info', 3000);
     rematchModal.style.display = 'none'; // Hide modal if it was showing
-    // Button states will be handled by the subsequent gameState update after server reset
 });
 
 // Listener when new match is declined
