@@ -508,11 +508,18 @@ socket.on('userLeft', (username) => {
 });
 
 // Listener for new match request from opponent
-socket.on('newMatchRequested', (requesterUsername) => {
-    rematchModalMessage.innerText = `${requesterUsername} wants to play another match!`;
-    rematchModal.style.display = 'flex';
-    gameStatusElement.innerText = "Opponent requested a rematch!";
-    // Ensure game buttons are disabled while rematch request is pending
+socket.on('newMatchRequested', (data) => { // 'data' will now be { requesterId, requesterUsername }
+    if (data.requesterId === currentPlayerId) {
+        // This is the player who sent the request
+        gameStatusElement.innerText = "Waiting for opponent's response to rematch request...";
+        rematchModal.style.display = 'none'; // Ensure modal is hidden for the requester
+    } else {
+        // This is the opponent
+        rematchModalMessage.innerText = `${data.requesterUsername} wants to play another match!`;
+        rematchModal.style.display = 'flex';
+        gameStatusElement.innerText = "Opponent requested a rematch!";
+    }
+    // Ensure game buttons are disabled while rematch request is pending for BOTH
     startGameBtn.disabled = true;
     resetGameBtn.disabled = true;
 });
@@ -622,8 +629,10 @@ socket.on('gameState', (state) => {
         resetGameBtn.disabled = true; // Both disabled during negotiation
         if (state.pendingNewMatchRequest.requesterId === currentPlayerId) {
             gameStatusElement.innerText = "Waiting for opponent's response to rematch request...";
+            rematchModal.style.display = 'none'; // Ensure modal is hidden for the requester
         } else {
             gameStatusElement.innerText = `${state.pendingNewMatchRequest.requesterUsername} wants to play again! Please respond in the modal.`;
+            // Modal display for opponent is handled in newMatchRequested listener directly.
         }
         disableBoardClicks();
     } else if (gameStarted) { // Game is actively in progress (no winner, no pending request, no draw)
