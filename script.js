@@ -640,7 +640,7 @@ socket.on('gameState', (state) => {
         disableBoardClicks();
     } else if (gameStarted) { // Game is actively in progress (no winner, no pending request, no draw)
         startGameBtn.disabled = true;
-        resetGameBtn.disabled = true; // Both disabled during active game
+        resetGameBtn.disabled = true;
         
         const turnPlayer = state.players.find(p => p.id === state.currentTurnPlayerId);
         const turnPlayerName = turnPlayer ? turnPlayer.username : "Unknown Player";
