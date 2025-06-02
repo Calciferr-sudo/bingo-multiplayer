@@ -6,7 +6,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎉</text></svg>">
     <title>Bingo Multiplayer</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap'); /* Added 700 for bolder text */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap'); /* Added 300 for lighter text */
 
         * {
             box-sizing: border-box;
@@ -16,83 +16,76 @@
             margin: 0;
             padding: 0;
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(to right, #f8f9fa, #e0eafc); /* Light gradient background */
-            background-image: url('data:image/svg+xml,%3Csvg width=\"6\" height=\"6\" viewBox=\"0 0 6 6\" xmlns=\"http://www.w3.org/2000/svg\"%3E%3Cg fill=\"%239C92AC\" fill-opacity=\"0.1\" fill-rule=\"evenodd\"%3E%3Cpath d=\"M5 0h1L0 6H0V5zm1 5v1H5l1-1z\"/%3E%3C/g%3E%3C/svg%3E'); /* Subtle pattern */
-            color: #333;
+            background: linear-gradient(to bottom right, #e0eafc, #cfdef3); /* Softer, more modern gradient */
+            background-image: url('data:image/svg+xml,%3Csvg width="6" height="6" viewBox="0 0 6 6" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="%239C92AC" fill-opacity="0.1" fill-rule="evenodd"%3E%3Cpath d="M5 0h1L0 6V5zM6 5v1H5z"/%3E%3C/g%3E%3C/svg%3E'); /* Subtle diagonal line pattern */
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
+            justify-content: center;
             min-height: 100vh;
-            flex-direction: column; /* To allow footer below content */
-        }
-
-        .container {
-            background-color: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* More pronounced shadow */
-            text-align: center;
-            width: 100%;
-            max-width: 450px; /* Slightly wider container for better input fit */
-            margin: 20px; /* Margin for mobile view */
+            color: #333;
+            padding: 20px; /* Add some padding around the whole page */
         }
 
         h1 {
-            color: #4CAF50; /* Green theme color */
-            margin-bottom: 25px;
-            font-weight: 700; /* Bolder for titles */
-            font-size: 2.2rem;
+            color: #2c3e50; /* Darker, more prominent title */
+            font-size: 3rem; /* Larger title */
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1); /* More pronounced shadow */
+            text-align: center;
+            letter-spacing: 1.5px;
+            font-weight: 700;
         }
 
         h2 {
-            color: #555;
-            margin-bottom: 15px;
-            font-size: 1.5rem;
-        }
-
-        p {
+            color: #34495e; /* Darker heading for sections */
             margin-bottom: 20px;
-            color: #666;
-        }
-
-        input[type="text"] {
-            width: calc(100% - 20px); /* Adjust width to account for padding */
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            color: #333;
+            font-weight: 600;
         }
 
         .btn {
-            background-color: #4CAF50; /* Green theme color */
-            color: white;
             padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
             font-size: 1rem;
             font-weight: 600;
-            transition: background-color 0.3s ease, transform 0.1s ease;
+            border-radius: 10px; /* More rounded */
+            cursor: pointer;
+            transition: all 0.3s ease;
             margin: 5px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border: none;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); /* Softer, larger shadow */
         }
 
         .btn-primary {
-            background-color: #4CAF50; /* Green */
+            background-color: #3498db; /* A vibrant blue */
+            color: white;
         }
+
         .btn-primary:hover {
-            background-color: #45a049; /* Darker green */
+            background-color: #2980b9;
             transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
         }
 
         .btn-secondary {
-            background-color: #007bff; /* Blue */
+            background-color: #95a5a6; /* A muted grey */
+            color: white;
         }
+
         .btn-secondary:hover {
-            background-color: #0056b3; /* Darker blue */
+            background-color: #7f8c8d;
             transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+        }
+
+        .btn-danger { /* Style for exit button */
+            background-color: #e74c3c; /* Red color */
+            color: white;
+        }
+
+        .btn-danger:hover { /* Hover for exit button */
+            background-color: #c0392b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15);
         }
 
         .btn:disabled {
@@ -102,277 +95,255 @@
             transform: none;
         }
 
-        #lobby-screen {
-            display: flex; /* Use flexbox for centering */
+        /* Main content wrapper */
+        main {
+            display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh; /* Take full viewport height */
-            width: 100%;
+            gap: 30px; /* Space between main sections */
+            width: clamp(320px, 95vw, 1000px); /* Responsive width for the whole app */
+            max-width: 1000px;
+            background: rgba(255, 255, 255, 0.95); /* Slightly transparent white background */
+            padding: 30px;
+            border-radius: 20px; /* More rounded main container */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1); /* Deeper shadow for main container */
         }
 
-        #game-screen {
-            display: none; /* Hidden by default */
-            width: 100%;
-            max-width: 900px; /* Max width for game screen */
-            margin: 20px auto;
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            display: grid; /* Use grid for main game layout */
-            grid-template-columns: 2fr 1fr; /* Two columns: board + chat */
-            gap: 20px;
-            align-items: start; /* Align items to the top */
-        }
-
+        /* Game Container (Board + Controls) */
         .game-container {
+            padding: 25px;
+            border-radius: 18px;
+            background: #ecf0f1; /* Light grey background for game section */
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05); /* Inner shadow for depth */
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 15px; /* Space between elements inside game-container */
+        }
+
+        .game-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            width: 100%;
         }
 
         #player-info, #game-status {
-            margin-bottom: 20px;
-            font-size: 1.1rem;
-            color: #555;
-            font-weight: 600;
+            font-size: 1.15rem; /* Slightly larger */
+            font-weight: 500;
+            color: #34495e;
         }
 
-        #current-room-id {
+        #player-id-game-screen {
             font-weight: 700;
-            color: #4CAF50;
-            user-select: all; /* Allow easy selection */
+            color: #2980b9; /* Match primary button blue */
         }
 
-        #copy-game-id-btn {
-            background-color: #6c757d; /* Grey button */
-            color: white;
+        .game-id-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.25rem; /* Larger Game ID */
+            font-weight: 700;
+            color: #27ae60; /* Green for Game ID */
+            background-color: #e8f8f5; /* Light green background */
+            padding: 8px 15px;
+            border-radius: 8px;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .copy-game-id-btn {
+            background: none;
             border: none;
-            padding: 5px 10px;
-            border-radius: 5px;
             cursor: pointer;
-            margin-left: 10px;
-            font-size: 0.9rem;
+            padding: 5px;
+            border-radius: 5px;
             transition: background-color 0.2s ease;
         }
 
-        #copy-game-id-btn:hover {
-            background-color: #5a6268;
+        .copy-game-id-btn:hover {
+            background-color: rgba(0,0,0,0.1);
         }
 
-        .controls {
-            margin-bottom: 20px;
+        .copy-game-id-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: #34495e; /* Dark grey icon */
         }
 
-        #board {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            grid-template-rows: repeat(5, 1fr);
-            width: 350px; /* Fixed size for the board */
-            height: 350px;
-            border: 2px solid #333;
-            border-radius: 10px;
-            overflow: hidden; /* Ensures rounded corners on cells */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .cell {
+        /* BINGO Tracker Styles */
+        #bingo-tracker {
             display: flex;
             justify-content: center;
-            align-items: center;
-            font-size: 1.5rem;
-            font-weight: 700;
-            border: 1px solid #eee;
-            background-color: #f0f8ff; /* Light blue background for cells */
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            user-select: none; /* Prevent text selection */
-        }
-
-        .cell:hover:not(.marked):not(.disabled-cell) {
-            background-color: #e6f7ff; /* Lighter blue on hover */
-            transform: scale(1.03);
-        }
-
-        .cell.marked {
-            background-color: #ffcccc; /* Light red for marked cells */
-            color: #c0392b; /* Darker red text */
-            text-decoration: line-through; /* Strikethrough */
-            cursor: not-allowed;
-        }
-
-        .cell.bingo-line-strike {
-            background-color: #90ee90; /* Light green for bingo lines */
-            color: #28a745; /* Darker green text */
-            animation: lineHighlight 1s ease-out forwards;
-            position: relative; /* For pseudo-element if needed */
-        }
-
-        @keyframes lineHighlight {
-            from {
-                box-shadow: 0 0 0px #90ee90;
-            }
-            to {
-                box-shadow: 0 0 15px #90ee90, 0 0 25px #90ee90; /* Glowing effect */
-            }
-        }
-
-        .cell.disabled-cell {
-            cursor: not-allowed;
-            opacity: 0.7;
-            background-color: #f0f0f0; /* Slightly duller when disabled */
-        }
-
-        /* Bingo Tracker */
-        .bingo-tracker {
-            display: flex;
-            justify-content: space-around;
-            width: 350px;
-            margin-top: 20px;
-            background-color: #f0f0f0;
-            padding: 10px;
-            border-radius: 10px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+            gap: 15px; /* Space between letters */
+            margin-bottom: 20px;
+            margin-top: 10px;
         }
 
         .bingo-letter {
-            font-size: 2em;
-            font-weight: bold;
-            color: #ccc; /* Default grey */
-            transition: color 0.3s ease;
+            font-size: 2.5rem; /* Large letters */
+            font-weight: 700;
+            color: #bdc3c7; /* Light grey by default */
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+            transition: all 0.3s ease-out;
+            transform: scale(1);
         }
 
         .bingo-letter.marked {
-            color: #ff9800; /* Orange when marked */
-            text-shadow: 0 0 5px rgba(255,152,0,0.5); /* Subtle glow */
+            color: #27ae60; /* Vibrant green when marked */
+            transform: scale(1.1); /* Slightly pop out */
+            text-shadow: 0 0 10px rgba(39, 174, 96, 0.5); /* Green glow */
         }
 
 
+        #board {
+            display: grid;
+            grid-template-columns: repeat(5, 70px);
+            grid-template-rows: repeat(5, 70px);
+            gap: 10px;
+            padding: 20px;
+            background: #ffffff; /* White background for the board itself */
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08); /* Subtle shadow for the board */
+            margin: 20px auto;
+            width: fit-content;
+        }
+
+        .cell {
+            background-color: #f8f9fa; /* Lighter cell background */
+            border: 1px solid #e0e0e0; /* Thinner border */
+            border-radius: 8px;
+            text-align: center;
+            line-height: 70px;
+            font-size: 1.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); /* Softer cell shadow */
+        }
+
+        .cell:hover:not(.marked):not(.disabled-cell) {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .cell.marked {
+            background-color: #28a745; /* Green for marked */
+            color: white;
+            border-color: #218838;
+            pointer-events: none;
+            box-shadow: 0 4px 8px rgba(40,167,69,0.3);
+            animation: bingoPop 0.3s ease-out;
+        }
+
+        /* Keyframes for the pop animation */
+        @keyframes bingoPop {
+            0% { transform: scale(0.8); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .cell.disabled-cell {
+            background-color: #f0f0f0;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        /* Style for cells that form a completed Bingo line */
+        .cell.bingo-line-strike {
+            background-color: #fdd835; /* A yellowish color to highlight the line */
+            box-shadow: 0 0 10px rgba(253, 216, 53, 0.8); /* Optional: add a subtle glow */
+        }
+
+        /* Ensure marked cells still look distinct, even if they are part of a struck line */
+        /* This combines the marked color with the line-strike color */
+        .cell.marked.bingo-line-strike {
+            background-color: #ffb300; /* A slightly darker orange/yellow when both marked and struck */
+            box-shadow: 0 0 12px rgba(255, 179, 0, 1); /* Enhanced glow for marked+struck */
+        }
+
+        .controls {
+            margin-top: 10px; /* Reduced margin */
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+        }
+
+        /* Chat Section */
         .chat-section {
+            background: #ecf0f1; /* Light grey background for chat section */
+            padding: 25px;
+            border-radius: 18px;
+            box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
             display: flex;
             flex-direction: column;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
-            background-color: #f9f9f9;
-            height: 450px; /* Fixed height for chat */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-        }
-
-        .chat-section h2 {
-            background-color: #f2f2f2;
-            padding: 10px;
-            margin: 0;
-            border-bottom: 1px solid #ddd;
-            font-size: 1.2rem;
-            color: #444;
+            gap: 15px;
         }
 
         #chat-messages {
-            flex-grow: 1;
-            padding: 15px;
+            height: 200px;
+            border: 1px solid #bdc3c7; /* Softer border */
+            padding: 10px;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px; /* Space between messages */
+            border-radius: 8px;
+            background-color: #ffffff; /* White background for messages */
+            font-size: 0.95rem;
+            line-height: 1.5;
         }
 
         .chat-message {
-            background-color: #e9e9e9;
-            padding: 8px 12px;
-            border-radius: 15px;
-            align-self: flex-start; /* Default alignment */
-            max-width: 85%;
-            word-wrap: break-word; /* Ensure long words wrap */
-            font-size: 0.95rem;
-            line-height: 1.4;
-            color: #333;
+            margin-bottom: 5px;
+            word-wrap: break-word;
         }
 
         .chat-message strong {
-            color: #007bff; /* Blue for sender's name */
-            font-weight: 600;
+            color: #34495e;
         }
-
-        /* NEW: Style for emote messages */
-        .emote-message {
-            background-color: #d1ecf1; /* Light blue background for emotes */
-            color: #0c5460; /* Darker blue text */
-            font-weight: 600;
-            text-align: center;
-            align-self: center; /* Center emotes in chat */
-            padding: 10px 15px;
-            border-radius: 20px;
-            font-size: 1.1rem;
-            animation: fadeIn 0.5s ease-out; /* Simple fade in */
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
 
         .chat-input-group {
             display: flex;
-            padding: 10px;
-            border-top: 1px solid #ddd;
-            background-color: #fff;
+            gap: 10px;
         }
 
-        .chat-input-group input {
+        #chat-input {
             flex-grow: 1;
-            margin-bottom: 0; /* Override default margin */
-            border-radius: 8px 0 0 8px; /* Rounded left, sharp right */
-            border-right: none; /* No border between input and button */
-        }
-
-        .chat-input-group button {
-            border-radius: 0 8px 8px 0; /* Sharp left, rounded right */
-            margin: 0; /* Override default margin */
-            padding: 12px 18px;
-            background-color: #4CAF50; /* Green send button */
-        }
-        .chat-input-group button:hover {
-            background-color: #45a049;
-        }
-
-        /* Game Notifications */
-        .game-notifications {
-            position: absolute;
-            top: 20px; /* Adjust based on your header/layout */
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
+            padding: 12px 15px;
+            border: 1px solid #bdc3c7;
+            border-radius: 8px;
             font-size: 1rem;
-            opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
-            z-index: 1000;
-            white-space: nowrap; /* Prevent text wrapping */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .game-notifications.show {
-            opacity: 1;
-            visibility: visible;
+        #send-chat-btn {
+            padding: 12px 20px;
+            background-color: #2ecc71; /* A brighter green */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 
+        #send-chat-btn:hover {
+            background-color: #27ad60;
+        }
 
-        /* Message Modal */
+        /* Modal Styles */
         .message-modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1; /* Sit on top */
+            display: none;
+            position: fixed;
+            z-index: 1000;
             left: 0;
             top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            display: flex;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
             justify-content: center;
             align-items: center;
         }
@@ -381,189 +352,397 @@
             background-color: #fefefe;
             margin: auto;
             padding: 30px;
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 400px;
-            border-radius: 10px;
+            border-radius: 12px;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             text-align: center;
-            position: relative; /* For close button positioning */
+            max-width: 400px;
+            width: 90%;
+            animation: fadeIn 0.3s ease-out;
         }
 
         .message-modal-content h3 {
-            color: #4CAF50;
             margin-top: 0;
-            margin-bottom: 20px;
+            color: #3498db;
             font-size: 1.8rem;
         }
 
         .message-modal-content p {
-            margin-bottom: 25px;
             font-size: 1.1rem;
-            color: #555;
+            line-height: 1.6;
+            margin-bottom: 20px;
         }
 
-        .rematch-buttons {
+        .message-modal-content button {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .message-modal-content button:hover {
+            background-color: #2980b9;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Lobby Screen Specific Styles --- */
+        #lobby-screen {
+            background: white;
+            padding: 40px;
+            border-radius: 20px; /* More rounded */
+            box-shadow: 0 15px 30px rgba(0,0,0,0.1); /* Deeper shadow */
+            text-align: center;
+            width: clamp(300px, 90vw, 500px);
+            max-width: 500px;
             display: flex;
+            flex-direction: column;
+            align-items: center;
             justify-content: center;
-            gap: 15px;
+            gap: 25px; /* Increased space between sections */
+            position: relative;
+            overflow: hidden;
         }
 
+        .lobby-title {
+            margin-bottom: 10px;
+            font-size: 2.5rem; /* Larger lobby title */
+            color: #3498db; /* Match primary blue */
+            font-weight: 700;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.05);
+        }
 
-        /* NEW: Styles for Emote Buttons */
-        .emote-buttons {
-            display: flex; /* Arrange buttons in a row */
-            flex-wrap: wrap; /* Allow buttons to wrap to the next line */
-            gap: 8px; /* Space between buttons */
-            margin-bottom: 15px; /* Space below emote buttons */
-            justify-content: center; /* Center buttons horizontally */
-            padding: 5px;
-            border-radius: 8px;
-            background-color: rgba(255, 255, 255, 0.1); /* Slightly transparent background */
+        .lobby-tagline {
+            font-size: 1.1rem;
+            color: #666;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            font-weight: 300; /* Lighter weight */
+        }
+
+        .lobby-input-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px; /* Increased gap */
+        }
+
+        .input-label {
+            font-size: 1.15rem; /* Slightly larger */
+            color: #444;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        #game-id-input, #username-input {
+            width: calc(100% - 40px);
+            padding: 15px 20px; /* More padding */
+            border: 2px solid #bdc3c7; /* Softer border */
+            border-radius: 10px;
+            font-size: 1.1rem;
+            text-align: center;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
             box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
         }
 
-        .emote-btn {
-            background-color: #007bff; /* Primary blue color */
-            color: white;
-            border: none;
-            border-radius: 5px;
-            padding: 8px 12px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            flex-grow: 1; /* Allow buttons to grow and fill space */
-            min-width: 80px; /* Minimum width for readability */
-            white-space: nowrap; /* Prevent text from wrapping inside button */
-            overflow: hidden;
-            text-overflow: ellipsis;
+        #game-id-input:focus, #username-input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 4px rgba(52,152,219,0.2); /* Brighter glow */
         }
 
-        .emote-btn:hover {
-            background-color: #0056b3; /* Darker blue on hover */
-            transform: translateY(-1px); /* Slight lift effect */
+        .lobby-action-btn {
+            width: calc(100% - 40px);
+            padding: 16px 25px; /* Larger padding for buttons */
+            font-size: 1.15rem; /* Larger font for buttons */
         }
 
-        .emote-btn:active {
-            background-color: #004085; /* Even darker blue on active */
-            transform: translateY(0);
+        .lobby-divider {
+            position: relative;
+            width: 80%;
+            margin: 25px 0; /* Increased margin */
+            font-size: 1.1rem;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
         }
 
+        .lobby-divider::before,
+        .lobby-divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 35%; /* Shorter lines */
+            height: 1px;
+            background-color: #dcdcdc; /* Lighter line */
+        }
 
-        /* Footer */
-        h4 {
-            margin-top: 20px;
+        .lobby-divider::before {
+            left: 0;
+            transform: translateY(-50%);
+        }
+
+        .lobby-divider::after {
+            right: 0;
+            transform: translateY(-50%);
+        }
+
+        .lobby-create-section {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        .create-btn {
+            background-color: #2ecc71; /* Brighter green for create */
+        }
+
+        .create-btn:hover {
+            background-color: #27ad60;
+        }
+
+        .lobby-message {
+            margin-top: 15px;
+            font-size: 1.05rem;
+            color: #666;
+            min-height: 25px;
+            font-weight: 500;
+        }
+
+        .player-id-info {
+            font-size: 0.95rem;
             color: #777;
-            font-size: 0.9rem;
+            margin-top: 20px; /* More space */
+            padding-top: 15px;
+            border-top: 1px dashed #cfd9e0; /* Softer separator */
+            width: 100%;
+        }
+
+        #current-room-id {
+            font-size: 1.3rem; /* Slightly larger */
+            font-weight: 700;
+            color: #27ae60; /* Green for Game ID */
+        }
+
+        /* Hide game screen initially */
+        #game-screen {
+            display: none;
+            width: 100%; /* Ensure game screen takes full width of main */
+        }
+
+        /* Game Notifications Container */
+        .game-notifications {
+            position: fixed;
+            bottom: 25px; /* Slightly higher */
+            left: 50%;
+            transform: translateX(-50%);
+            width: clamp(280px, 80vw, 450px); /* Wider notification */
+            background-color: rgba(44, 62, 80, 0.9); /* Darker, more prominent background */
+            color: white;
+            padding: 15px 25px; /* More padding */
+            border-radius: 10px; /* More rounded */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* Stronger shadow */
+            font-size: 1.05rem;
+            text-align: center;
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease-out, visibility 0.4s ease-out, transform 0.4s ease-out;
+            pointer-events: none;
+        }
+
+        .game-notifications.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(-15px); /* More pronounced upward slide */
         }
 
         /* Responsive adjustments */
         @media (max-width: 768px) {
-            .container {
-                padding: 20px;
-                margin: 10px;
-            }
-
             h1 {
+                font-size: 2.5rem;
+                margin-bottom: 20px;
+            }
+            main {
+                padding: 20px;
+                gap: 20px;
+            }
+            .game-container, .chat-section, #lobby-screen {
+                padding: 20px;
+            }
+            #board {
+                grid-template-columns: repeat(5, 55px); /* Smaller cells */
+                grid-template-rows: repeat(5, 55px);
+                gap: 8px;
+                padding: 15px;
+            }
+            .cell {
+                line-height: 55px;
+                font-size: 1.4rem;
+            }
+            .btn, .lobby-action-btn {
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            #chat-messages {
+                height: 150px;
+            }
+            .lobby-title {
+                font-size: 2rem;
+            }
+            .lobby-tagline {
+                font-size: 0.95rem;
+            }
+            #game-id-input, #username-input, .lobby-action-btn {
+                width: calc(100% - 20px);
+                padding: 10px 15px;
+                font-size: 0.95rem;
+            }
+            .game-id-display {
+                font-size: 1.1rem;
+                padding: 6px 12px;
+            }
+            .copy-game-id-btn svg {
+                width: 18px;
+                height: 18px;
+            }
+            .bingo-letter {
+                font-size: 2rem;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 2rem;
+                margin-bottom: 15px;
+            }
+            main {
+                padding: 15px;
+                gap: 15px;
+            }
+            #board {
+                grid-template-columns: repeat(5, 45px); /* Even smaller cells */
+                grid-template-rows: repeat(5, 45px);
+                gap: 5px;
+                padding: 10px;
+            }
+            .cell {
+                line-height: 45px;
+                font-size: 1.1rem;
+            }
+            .lobby-title {
                 font-size: 1.8rem;
             }
-
-            .btn {
-                width: 100%; /* Full width buttons on small screens */
-                margin: 5px 0;
+            .lobby-tagline {
+                font-size: 0.85rem;
             }
-
-            #game-screen {
-                grid-template-columns: 1fr; /* Single column layout for game screen */
-                margin: 10px;
-            }
-
-            #board {
-                width: 300px;
-                height: 300px;
-            }
-
-            .cell {
-                font-size: 1.2rem;
-            }
-
-            .bingo-tracker {
-                width: 300px;
-            }
-
-            .bingo-letter {
-                font-size: 1.8em;
-            }
-
-            .chat-section {
-                height: 300px; /* Adjust chat height for mobile */
-            }
-
-            .emote-btn {
+            .lobby-divider {
+                margin: 15px 0;
                 font-size: 0.9rem;
-                padding: 6px 10px;
+            }
+            .lobby-action-btn {
+                padding: 12px 20px;
+                font-size: 1rem;
+            }
+            .game-notifications {
+                width: clamp(250px, 90vw, 350px);
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+            .bingo-letter {
+                font-size: 1.8rem;
+                gap: 8px;
             }
         }
     </style>
 </head>
 <body>
-    <div id="lobby-screen" class="container">
-        <h1>Bingo Multiplayer</h1>
-        <p>Enter your username and start or join a game!</p>
-        <input type="text" id="username-input" placeholder="Enter your username" />
-        <button id="create-game-btn" class="btn btn-primary">Create New Game</button>
-        <input type="text" id="game-id-input" placeholder="Enter Game ID to join" />
-        <button id="join-game-btn" class="btn btn-secondary">Join Game</button>
-        <p id="lobby-status">Enter a Game ID or create a new game.</p>
-        <p>Your Player ID: <span id="player-id"></span></p>
-    </div>
+    <h1>🎉 Bingo Multiplayer 🎉</h1>
 
-    <div id="game-screen">
-        <div class="game-container">
-            <div id="player-info">
-                Your Player ID: <span id="player-id-game-screen"></span><br>
-                Game ID: <span id="current-room-id"></span>
-                <button id="copy-game-id-btn" title="Copy Game ID">Copy</button>
-            </div>
-            <div id="game-status">Waiting for game to start...</div>
+    <main>
+        <div id="lobby-screen" class="game-container">
+            <h2 class="lobby-title">Welcome to Bingo Multiplayer!</h2>
+            <p class="lobby-tagline">Join an existing game by ID or create your own to start playing.</p>
 
-            <div id="game-notifications" class="game-notifications"></div>
-
-            <div class="controls">
-                <button id="start-game-btn" class="btn btn-primary">Start Game</button>
-                <button id="reset-game-btn" class="btn btn-secondary" disabled>Reset Game</button>
-                <button id="exit-room-btn" class="btn btn-secondary">Exit Room</button>
+            <div class="lobby-input-section">
+                <label for="username-input" class="input-label">Your Username:</label>
+                <input type="text" id="username-input" placeholder="e.g., BingoMaster" maxlength="15" value="Player" />
             </div>
 
-            <div id="board"></div>
+            <div class="lobby-input-section">
+                <label for="game-id-input" class="input-label">Enter Game ID:</label>
+                <input type="text" id="game-id-input" placeholder="e.g., ABC123" maxlength="6" />
+                <button id="join-game-btn" class="btn btn-secondary lobby-action-btn">Join Game</button>
+            </div>
 
-            <div class="bingo-tracker">
-                <span id="bingo-b" class="bingo-letter">B</span>
-                <span id="bingo-i" class="bingo-letter">I</span>
-                <span id="bingo-n" class="bingo-letter">N</span>
-                <span id="bingo-g" class="bingo-letter">G</span>
-                <span id="bingo-o" class="bingo-letter">O</span>
+            <div class="lobby-divider">OR</div>
+
+            <div class="lobby-create-section">
+                <button id="create-game-btn" class="btn btn-primary lobby-action-btn create-btn">Create New Game</button>
+            </div>
+
+            <div id="lobby-status" class="lobby-message"></div>
+            <div id="player-id-display" class="player-id-info">
+                Your ID: <span id="player-id">Connecting...</span>
             </div>
         </div>
 
-        <div class="chat-section">
-            <h2>Chat</h2>
-            <div id="chat-messages"></div>
-            
-            <div class="emote-buttons">
-                <button class="emote-btn" data-emote="👍 Nice!">👍 Nice!</button>
-                <button class="emote-btn" data-emote="👎 Oops!">👎 Oops!</button>
-                <button class="emote-btn" data-emote="😂 Haha!">😂 Haha!</button>
-                <button class="emote-btn" data-emote="😡 Argh!">😡 Argh!</button>
-                <button class="emote-btn" data-emote="✨ Bingo!">✨ Bingo!</button>
+        <div id="game-screen">
+            <div class="game-container">
+                <div class="game-header">
+                    <div id="player-info">
+                        Your Player ID: <span id="player-id-game-screen"></span>
+                    </div>
+                    <div class="game-id-display">
+                        Game ID: <span id="current-room-id"></span>
+                        <button id="copy-game-id-btn" class="copy-game-id-btn" title="Copy Game ID">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z"/>
+                            </svg>
+                        </button>
+                    </div>
+                    <div id="game-status">Waiting for game to start...</div>
                 </div>
 
-            <div class="chat-input-group">
-                <input type="text" id="chat-input" placeholder="Type your message..." />
-                <button id="send-chat-btn">Send</button>
+                <div id="game-notifications" class="game-notifications"></div>
+
+                <div class="controls">
+                    <button id="start-game-btn" class="btn btn-primary">Start Game</button>
+                    <button id="reset-game-btn" class="btn btn-secondary">Reset Game</button>
+                    <button id="exit-room-btn" class="btn btn-danger">Exit Room</button>
+                </div>
+
+                <div id="bingo-tracker">
+                    <span id="bingo-b" class="bingo-letter">B</span>
+                    <span id="bingo-i" class="bingo-letter">I</span>
+                    <span id="bingo-n" class="bingo-letter">N</span>
+                    <span id="bingo-g" class="bingo-letter">G</span>
+                    <span id="bingo-o" class="bingo-letter">O</span>
+                </div>
+
+                <div id="board"></div>
+            </div>
+
+            <div class="chat-section">
+                <h2>Chat</h2>
+                <div id="chat-messages"></div>
+                <div class="chat-input-group">
+                    <input type="text" id="chat-input" placeholder="Type your message..." />
+                    <button id="send-chat-btn">Send</button>
+                </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <h4>--Game by Vikas Shetty--</h4>
 

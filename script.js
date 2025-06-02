@@ -60,8 +60,6 @@ const rematchDeclineBtn = document.getElementById('rematch-decline-btn');
 // BINGO Tracker Elements
 const bingoLetters = ['B', 'I', 'N', 'G', 'O'].map(letter => document.getElementById(`bingo-${letter.toLowerCase()}`));
 
-// NEW: Emote Buttons
-const emoteButtons = document.querySelectorAll('.emote-btn'); // Select all buttons with this class
 
 // --- Game State Variables ---
 let numbers = []; // Array to hold the numbers on the player's board (1-25, shuffled)
@@ -291,29 +289,17 @@ function checkBingo() {
 }
 
 /**
- * Appends a new message to the chat display, or an emote.
+ * Appends a new message to the chat display.
  * @param {string} senderDisplayName - The username or player number of the sender.
- * @param {string} message - The message content (could be an emote string).
+ * @param {string} message - The message content.
  * @param {boolean} isSelf - True if the message is from the current player.
- * @param {boolean} isEmote - NEW: True if this is an emote message.
  */
-function addChatMessage(senderDisplayName, message, isSelf = false, isEmote = false) { // Added isEmote parameter
+function addChatMessage(senderDisplayName, message, isSelf = false) {
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
-    // If it's an emote, add a special class for styling if needed
-    if (isEmote) {
-        messageElement.classList.add('emote-message');
-    }
-
+    // Display "You" if it's the current player, otherwise the sender's display name
     const displaySender = isSelf ? 'You' : senderDisplayName;
-    
-    // Format differently for emotes: e.g., "Player-ABCD sent 👍 Nice!"
-    if (isEmote) {
-        messageElement.innerHTML = `<strong>${displaySender}</strong> sent ${message}`;
-    } else {
-        messageElement.innerHTML = `<strong>${displaySender}:</strong> ${message}`;
-    }
-    
+    messageElement.innerHTML = `<strong>${displaySender}:</strong> ${message}`;
     chatMessagesElement.appendChild(messageElement);
     chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
 }
@@ -456,20 +442,6 @@ rematchDeclineBtn.addEventListener('click', () => {
     socket.emit('declineNewMatch');
     rematchModal.style.display = 'none';
     gameStatusElement.innerText = "Declined rematch.";
-});
-
-
-// NEW: Emote Button Listeners
-emoteButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        if (!currentGameId) {
-            showMessageModal("Emote Error", "You must join a game to send emotes.");
-            return;
-        }
-        const emote = button.dataset.emote; // Get the emote string from data-emote attribute
-        console.log(`Sending emote: ${emote} in game ${currentGameId}...`);
-        socket.emit('sendEmote', emote); // Emit the new event
-    });
 });
 
 
@@ -769,17 +741,8 @@ socket.on('gameReset', () => {
 
 socket.on('message', (data) => {
     const isSelf = (data.senderId === currentUsername) || (data.senderId === `Player-${currentPlayerId.substring(0, 4)}`);
-    // Existing message handling
-    addChatMessage(data.senderId, data.message, isSelf, false); // Explicitly set isEmote to false
+    addChatMessage(data.senderId, data.message, isSelf);
 });
-
-// NEW: Listen for incoming emotes
-socket.on('emote', (data) => {
-    // data should contain { senderUsername, emote }
-    const isSelf = (data.senderUsername === currentUsername); // Check if sender is current user
-    addChatMessage(data.senderUsername, data.emote, isSelf, true); // Set isEmote to true
-});
-
 
 socket.on('disconnect', () => {
     console.log('Disconnected from server.');
