@@ -14,6 +14,8 @@ const createGameBtn = document.getElementById('create-game-btn');
 const joinGameBtn = document.getElementById('join-game-btn');
 const lobbyStatusElement = document.getElementById('lobby-status');
 const playerIdDisplayLobby = document.getElementById('player-id'); // For Lobby Screen
+const onlinePlayersCountSpan = document.getElementById('online-players-count'); // NEW: Online Players Count
+const playAiBtn = document.getElementById('play-ai-btn'); // NEW: Play with AI Button
 
 // Game Screen Elements
 const gameScreen = document.getElementById('game-screen');
@@ -60,6 +62,8 @@ const rematchDeclineBtn = document.getElementById('rematch-decline-btn');
 // BINGO Tracker Elements
 const bingoLetters = ['B', 'I', 'N', 'G', 'O'].map(letter => document.getElementById(`bingo-${letter.toLowerCase()}`));
 
+// Emote Buttons
+const emoteButtons = document.querySelectorAll('.emote-btn'); // Select all buttons with this class
 
 // --- Game State Variables ---
 let numbers = []; // Array to hold the numbers on the player's board (1-25, shuffled)
@@ -73,11 +77,16 @@ let currentGameId = null; // Stores the ID of the game room the player is in
 let currentWinnerId = null; // Stores the ID of the winning player, or null if no winner yet
 let isDraw = false; // Flag to indicate if the game ended in a draw
 
-// NEW: Flag to help manage rapid game-ending events and prevent conflicting modal displays
+// Flag to help manage rapid game-ending events and prevent conflicting modal displays
 let processingGameEnd = false; 
 
 // Set to keep track of lines that have been visually struck
 let struckLineIndices = new Set();
+
+// NEW: AI Specific Variables
+const AI_PLAYER_ID = 'AI-PLAYER'; // Consistent ID for the AI
+const AI_USERNAME = 'BingoBot'; // Username for the AI
+let isAIGame = false; // Flag to indicate if it's a game against AI
 
 // --- UI Switching Functions ---
 function showLobbyScreen() {
@@ -94,10 +103,12 @@ function showLobbyScreen() {
     // Re-enable lobby buttons
     createGameBtn.disabled = false;
     joinGameBtn.disabled = false;
+    playAiBtn.disabled = false; // NEW: Re-enable AI button
     rematchModal.style.display = 'none'; // Ensure rematch modal is hidden
     isDraw = false; // Reset draw state
     currentWinnerId = null; // Ensure winner is cleared
     processingGameEnd = false; // Reset processing flag
+    isAIGame = false; // NEW: Reset AI game flag
 }
 
 function showGameScreen() {
@@ -289,23 +300,35 @@ function checkBingo() {
 }
 
 /**
- * Appends a new message to the chat display.
+ * Appends a new message to the chat display, or an emote.
  * @param {string} senderDisplayName - The username or player number of the sender.
- * @param {string} message - The message content.
+ * @param {string} message - The message content (could be an emote string).
  * @param {boolean} isSelf - True if the message is from the current player.
+ * @param {boolean} isEmote - NEW: True if this is an emote message.
  */
-function addChatMessage(senderDisplayName, message, isSelf = false) {
+function addChatMessage(senderDisplayName, message, isSelf = false, isEmote = false) { // Added isEmote parameter
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
-    // Display "You" if it's the current player, otherwise the sender's display name
+    // If it's an emote, add a special class for styling if needed
+    if (isEmote) {
+        messageElement.classList.add('emote-message');
+    }
+
     const displaySender = isSelf ? 'You' : senderDisplayName;
-    messageElement.innerHTML = `<strong>${displaySender}:</strong> ${message}`;
+    
+    // Format differently for emotes: e.g., "Player-ABCD sent 👍 Nice!"
+    if (isEmote) {
+        messageElement.innerHTML = `<strong>${displaySender}</strong> sent ${message}`;
+    } else {
+        messageElement.innerHTML = `<strong>${displaySender}:</strong> ${message}`;
+    }
+    
     chatMessagesElement.appendChild(messageElement);
     chatMessagesElement.scrollTop = chatMessagesElement.scrollHeight;
 }
 
 /**
- * NEW: Sends a periodic HTTP GET request to the backend to keep it awake.
+ * Sends a periodic HTTP GET request to the backend to keep it awake.
  */
 function sendKeepAlivePing() {
     fetch(`${BACKEND_HTTP_URL}/ping`)
@@ -320,6 +343,36 @@ function sendKeepAlivePing() {
             console.error('Keep-alive ping error:', error);
         });
 }
+
+// NEW: AI Logic for its turn
+function handleAITurn() {
+    // Only proceed if it's an AI game and it's the AI's turn
+    if (!isAIGame || !gameStarted || isMyTurn || currentWinnerId || isDraw) {
+        return;
+    }
+
+    // Small delay to make it seem like the AI is "thinking"
+    setTimeout(() => {
+        const unmarkedNumbers = [];
+        for (let i = 0; i < numbers.length; i++) {
+            if (!marked[i]) {
+                unmarkedNumbers.push(numbers[i]);
+            }
+        }
+
+        if (unmarkedNumbers.length > 0) {
+            // Simple AI: pick a random unmarked number
+            const randomIndex = Math.floor(Math.random() * unmarkedNumbers.length);
+            const numberToMark = unmarkedNumbers[randomIndex];
+            
+            console.log(`AI (${AI_USERNAME}) is marking number: ${numberToMark}`);
+            socket.emit('markNumber', numberToMark); // AI "marks" the number via server
+        } else {
+            console.log("AI: No unmarked numbers left.");
+        }
+    }, 1500); // 1.5 seconds delay
+}
+
 
 // --- Event Listeners for UI Elements ---
 
@@ -352,6 +405,7 @@ createGameBtn.addEventListener('click', () => {
     lobbyStatusElement.innerText = "Creating game...";
     createGameBtn.disabled = true;
     joinGameBtn.disabled = true;
+    playAiBtn.disabled = true; // Disable AI button when creating/joining human game
 });
 
 joinGameBtn.addEventListener('click', () => {
@@ -372,7 +426,25 @@ joinGameBtn.addEventListener('click', () => {
     lobbyStatusElement.innerText = `Joining game ${gameId}...`;
     createGameBtn.disabled = true;
     joinGameBtn.disabled = true;
+    playAiBtn.disabled = true; // Disable AI button when creating/joining human game
 });
+
+// NEW: Play with AI Button Listener
+playAiBtn.addEventListener('click', () => {
+    const username = usernameInput.value.trim();
+    if (!username) {
+        showMessageModal("Username Required", "Please enter a username before playing with AI.");
+        return;
+    }
+    console.log(`Requesting to create AI game with username: ${username}...`);
+    isAIGame = true; // Set AI game flag
+    socket.emit('createAIGame', username);
+    lobbyStatusElement.innerText = "Starting game with AI...";
+    createGameBtn.disabled = true;
+    joinGameBtn.disabled = true;
+    playAiBtn.disabled = true;
+});
+
 
 // Game Screen Button Listeners
 startGameBtn.addEventListener('click', () => {
@@ -445,6 +517,20 @@ rematchDeclineBtn.addEventListener('click', () => {
 });
 
 
+// Emote Button Listeners
+emoteButtons.forEach(button => {
+    button.addEventListener('click', () => {
+        if (!currentGameId) {
+            showMessageModal("Emote Error", "You must join a game to send emotes.");
+            return;
+        }
+        const emote = button.dataset.emote; // Get the emote string from data-emote attribute
+        console.log(`Sending emote: ${emote} in game ${currentGameId}...`);
+        socket.emit('sendEmote', emote); // Emit the new event
+    });
+});
+
+
 // --- Socket.IO Event Listeners ---
 
 socket.on('connect', () => {
@@ -457,9 +543,15 @@ socket.on('connect', () => {
     updatePlayerIdDisplay();
     console.log(`Connected with ID: ${currentPlayerId}, Username: ${currentUsername}`);
     showLobbyScreen();
-    // NEW: Start sending keep-alive pings on connect
+    // Start sending keep-alive pings on connect
     sendKeepAlivePing();
 });
+
+// NEW: Listener for online players count
+socket.on('onlinePlayersCount', (count) => {
+    onlinePlayersCountSpan.innerText = count;
+});
+
 
 socket.on('gameCreated', (gameId) => {
     currentGameId = gameId;
@@ -469,6 +561,17 @@ socket.on('gameCreated', (gameId) => {
     showGameScreen();
     chatMessagesElement.innerHTML = '';
 });
+
+// NEW: Game created with AI
+socket.on('aiGameCreated', (gameId) => {
+    currentGameId = gameId;
+    currentRoomIdSpan.innerText = currentGameId;
+    console.log(`AI Game created. Your Game ID: ${gameId}`);
+    showMessageModal("AI Game Started!", `You are playing against ${AI_USERNAME}.`);
+    showGameScreen();
+    chatMessagesElement.innerHTML = '';
+});
+
 
 socket.on('gameJoined', (gameId) => {
     currentGameId = gameId;
@@ -488,7 +591,7 @@ socket.on('gameError', (message) => {
         lobbyStatusElement.innerText = message;
         createGameBtn.disabled = false;
         joinGameBtn.disabled = false;
-
+        playAiBtn.disabled = false; // NEW: Re-enable AI button on error
         // If the error is about a pending rematch request, re-enable reset button
         if (message.includes("A new match request is already pending.")) {
             resetGameBtn.disabled = false; // Allow user to try requesting again
@@ -510,6 +613,13 @@ socket.on('userLeft', (username) => {
 
 // Listener for new match request from opponent
 socket.on('newMatchRequested', (data) => { // 'data' will now be { requesterId, requesterUsername }
+    if (isAIGame) { // NEW: If it's an AI game, auto-accept or handle differently
+        // For AI, we can just auto-accept the rematch
+        console.log("AI game: Auto-accepting rematch request.");
+        socket.emit('acceptNewMatch');
+        return;
+    }
+
     if (data.requesterId === currentPlayerId) {
         // This is the player who sent the request
         gameStatusElement.innerText = "Waiting for opponent's response to rematch request...";
@@ -544,7 +654,7 @@ socket.on('newMatchDeclined', (declinerUsername) => {
     gameStatusElement.innerText = "Rematch declined. Click 'Reset Game' to send another request.";
 });
 
-// NEW: Listener for a game ending in a draw
+// Listener for a game ending in a draw
 socket.on('gameDraw', (data) => {
     console.log(`Game ended in a draw on number ${data.number}.`);
     disableBoardClicks();
@@ -575,6 +685,9 @@ socket.on('gameState', (state) => {
         console.warn(`Received gameState for a different game ID (${state.gameId}) than current (${currentGameId}). Ignoring.`);
         return;
     }
+
+    // Determine if this is an AI game based on players in the state
+    isAIGame = state.players.some(p => p.id === AI_PLAYER_ID);
 
     // Update player info (username, number)
     const selfPlayer = state.players.find(p => p.id === currentPlayerId);
@@ -615,13 +728,14 @@ socket.on('gameState', (state) => {
     } else if (currentWinnerId) { // Game has ended with a winner (and it's not a draw)
         startGameBtn.disabled = true;
         resetGameBtn.disabled = false;
-        gameStatusElement.innerText = `Game Over! ${state.players.find(p => p.id === currentWinnerId)?.username || 'Someone'} won. Click 'Reset Game' for a rematch.`;
+        const winnerUsername = state.players.find(p => p.id === currentWinnerId)?.username || 'Someone';
+        gameStatusElement.innerText = `Game Over! ${winnerUsername} won. Click 'Reset Game' for a rematch.`;
         // Only show modal if we haven't already processed a game end event that would show it
         if (!processingGameEnd) {
             if (currentWinnerId === currentPlayerId) {
                 showMessageModal("Congratulations!", "BINGO! You won the game!");
             } else {
-                showMessageModal("Game Over!", `${state.players.find(p => p.id === currentWinnerId)?.username || 'Someone'} won the game!`);
+                showMessageModal("Game Over!", `${winnerUsername} won the game!`);
             }
             processingGameEnd = true; // Mark as processed
         }
@@ -651,6 +765,10 @@ socket.on('gameState', (state) => {
         } else {
             gameStatusElement.innerText = `Waiting for ${turnPlayerName} to call a number.`;
             disableBoardClicks();
+            // NEW: Trigger AI turn if it's AI's turn
+            if (isAIGame && state.currentTurnPlayerId === AI_PLAYER_ID) {
+                handleAITurn();
+            }
         }
         processingGameEnd = false; // Ensure flag is off if game becomes active again
     } else { // Game is not started (e.g., lobby state, after full reset, or initial join, or after a decline)
@@ -741,8 +859,17 @@ socket.on('gameReset', () => {
 
 socket.on('message', (data) => {
     const isSelf = (data.senderId === currentUsername) || (data.senderId === `Player-${currentPlayerId.substring(0, 4)}`);
-    addChatMessage(data.senderId, data.message, isSelf);
+    // Existing message handling
+    addChatMessage(data.senderId, data.message, isSelf, false); // Explicitly set isEmote to false
 });
+
+// Listen for incoming emotes
+socket.on('emote', (data) => {
+    // data should contain { senderUsername, emote }
+    const isSelf = (data.senderUsername === currentUsername); // Check if sender is current user
+    addChatMessage(data.senderUsername, data.emote, isSelf, true); // Set isEmote to true
+});
+
 
 socket.on('disconnect', () => {
     console.log('Disconnected from server.');
@@ -757,6 +884,7 @@ socket.on('disconnect', () => {
     currentWinnerId = null; // Reset on disconnect
     isDraw = false; // Reset on disconnect
     processingGameEnd = false; // Reset on disconnect
+    isAIGame = false; // NEW: Reset AI game flag on disconnect
 });
 
 socket.on('connect_error', (error) => {
@@ -769,6 +897,7 @@ socket.on('connect_error', (error) => {
     currentWinnerId = null; // Reset on connection error
     isDraw = false; // Reset on connection error
     processingGameEnd = false; // Reset on connection error
+    isAIGame = false; // NEW: Reset AI game flag on connection error
 });
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -789,6 +918,6 @@ usernameInput.addEventListener('input', () => {
     updatePlayerIdDisplay();
 });
 
-// NEW: Call the ping function periodically
+// Call the ping function periodically
 // Send a ping every 5 minutes (300000 ms)
 setInterval(sendKeepAlivePing, 300000);
